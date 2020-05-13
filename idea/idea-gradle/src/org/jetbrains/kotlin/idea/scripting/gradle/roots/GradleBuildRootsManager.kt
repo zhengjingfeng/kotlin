@@ -182,7 +182,7 @@ class GradleBuildRootsManager(val project: Project) : ScriptingSupport() {
     fun markImportingInProgress(workingDir: String, inProgress: Boolean = true) {
         actualizeBuildRoot(workingDir)?.importing = inProgress
         updateNotifications(workingDir)
-        hideNotificationForProjectImport(project)
+        scriptConfigurationsAreUpToDate(project)
     }
 
     fun update(build: KotlinDslGradleBuildSync) {
@@ -207,7 +207,7 @@ class GradleBuildRootsManager(val project: Project) : ScriptingSupport() {
 
         add(newSupport)
 
-        hideNotificationForProjectImport(project)
+        scriptConfigurationsAreUpToDate(project)
     }
 
     private fun merge(old: GradleBuildRootData, new: GradleBuildRootData): GradleBuildRootData {
