@@ -10,6 +10,8 @@ package test.collections
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
+import kotlin.random.*
+import test.assertArrayContentEquals
 import kotlin.test.*
 
 class _UArraysTest {
@@ -18,7 +20,7 @@ class _UArraysTest {
         expect(8u) { uintArrayOf(1u, 2u, 3u).foldIndexed(0u) { i, acc, e -> acc + i.toUInt() * e } }
         expect(10) { uintArrayOf(1u, 2u, 3u).foldIndexed(1) { i, acc, e -> acc + i + e.toInt() } }
         expect(15u) { uintArrayOf(1u, 2u, 3u).foldIndexed(1u) { i, acc, e -> acc * (i.toUInt() + e) } }
-        expect(" 0-${1u} 1-${2u} 2-${3u}") { uintArrayOf(1u, 2u, 3u).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
+        expect(" 0-1 1-2 2-3") { uintArrayOf(1u, 2u, 3u).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
         expect(42u) {
             val numbers = uintArrayOf(1u, 2u, 3u, 4u)
             numbers.foldIndexed(0u) { index, a, b -> index.toUInt() * (a + b) }
@@ -27,7 +29,7 @@ class _UArraysTest {
             val numbers = uintArrayOf()
             numbers.foldIndexed(0u) { index, a, b -> index.toUInt() * (a + b) }
         }
-        expect("${1u}${1u}${2u}${3u}${4u}") {
+        expect("11234") {
             val numbers = uintArrayOf(1u, 2u, 3u, 4u)
             numbers.map { it.toString() }.foldIndexed("") { index, a, b -> if (index == 0) a + b + b else a + b }
         }
@@ -38,7 +40,7 @@ class _UArraysTest {
         expect(8uL) { ulongArrayOf(1uL, 2uL, 3uL).foldIndexed(0uL) { i, acc, e -> acc + i.toULong() * e } }
         expect(10) { ulongArrayOf(1uL, 2uL, 3uL).foldIndexed(1) { i, acc, e -> acc + i + e.toInt() } }
         expect(15uL) { ulongArrayOf(1uL, 2uL, 3uL).foldIndexed(1uL) { i, acc, e -> acc * (i.toULong() + e) } }
-        expect(" 0-${1uL} 1-${2uL} 2-${3uL}") { ulongArrayOf(1uL, 2uL, 3uL).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
+        expect(" 0-1 1-2 2-3") { ulongArrayOf(1uL, 2uL, 3uL).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
         expect(42uL) {
             val numbers = ulongArrayOf(1uL, 2uL, 3uL, 4uL)
             numbers.foldIndexed(0uL) { index, a, b -> index.toULong() * (a + b) }
@@ -47,7 +49,7 @@ class _UArraysTest {
             val numbers = ulongArrayOf()
             numbers.foldIndexed(0uL) { index, a, b -> index.toULong() * (a + b) }
         }
-        expect("${1uL}${1uL}${2uL}${3uL}${4uL}") {
+        expect("11234") {
             val numbers = ulongArrayOf(1uL, 2uL, 3uL, 4uL)
             numbers.map { it.toString() }.foldIndexed("") { index, a, b -> if (index == 0) a + b + b else a + b }
         }
@@ -58,7 +60,7 @@ class _UArraysTest {
         expect(8u) { ubyteArrayOf(1u, 2u, 3u).foldIndexed(0u) { i, acc, e -> acc + i.toUByte() * e } }
         expect(10) { ubyteArrayOf(1u, 2u, 3u).foldIndexed(1) { i, acc, e -> acc + i + e.toInt() } }
         expect(15u) { ubyteArrayOf(1u, 2u, 3u).foldIndexed(1u) { i, acc, e -> acc * (i.toUByte() + e) } }
-        expect(" 0-${1u} 1-${2u} 2-${3u}") { ubyteArrayOf(1u, 2u, 3u).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
+        expect(" 0-1 1-2 2-3") { ubyteArrayOf(1u, 2u, 3u).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
         expect(42u) {
             val numbers = ubyteArrayOf(1u, 2u, 3u, 4u)
             numbers.foldIndexed(0u) { index, a, b -> index.toUByte() * (a + b) }
@@ -67,7 +69,7 @@ class _UArraysTest {
             val numbers = ubyteArrayOf()
             numbers.foldIndexed(0u) { index, a, b -> index.toUByte() * (a + b) }
         }
-        expect("${1u}${1u}${2u}${3u}${4u}") {
+        expect("11234") {
             val numbers = ubyteArrayOf(1u, 2u, 3u, 4u)
             numbers.map { it.toString() }.foldIndexed("") { index, a, b -> if (index == 0) a + b + b else a + b }
         }
@@ -78,7 +80,7 @@ class _UArraysTest {
         expect(8u) { ushortArrayOf(1u, 2u, 3u).foldIndexed(0u) { i, acc, e -> acc + i.toUShort() * e } }
         expect(10) { ushortArrayOf(1u, 2u, 3u).foldIndexed(1) { i, acc, e -> acc + i + e.toInt() } }
         expect(15u) { ushortArrayOf(1u, 2u, 3u).foldIndexed(1u) { i, acc, e -> acc * (i.toUShort() + e) } }
-        expect(" 0-${1u} 1-${2u} 2-${3u}") { ushortArrayOf(1u, 2u, 3u).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
+        expect(" 0-1 1-2 2-3") { ushortArrayOf(1u, 2u, 3u).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
         expect(42u) {
             val numbers = ushortArrayOf(1u, 2u, 3u, 4u)
             numbers.foldIndexed(0u) { index, a, b -> index.toUShort() * (a + b) }
@@ -87,7 +89,7 @@ class _UArraysTest {
             val numbers = ushortArrayOf()
             numbers.foldIndexed(0u) { index, a, b -> index.toUShort() * (a + b) }
         }
-        expect("${1u}${1u}${2u}${3u}${4u}") {
+        expect("11234") {
             val numbers = ushortArrayOf(1u, 2u, 3u, 4u)
             numbers.map { it.toString() }.foldIndexed("") { index, a, b -> if (index == 0) a + b + b else a + b }
         }
@@ -98,8 +100,8 @@ class _UArraysTest {
         expect(8u) { uintArrayOf(1u, 2u, 3u).foldRightIndexed(0u) { i, e, acc -> acc + i.toUInt() * e } }
         expect(10) { uintArrayOf(1u, 2u, 3u).foldRightIndexed(1) { i, e, acc -> acc + i + e.toInt() } }
         expect(15u) { uintArrayOf(1u, 2u, 3u).foldRightIndexed(1u) { i, e, acc -> acc * (i.toUInt() + e) } }
-        expect(" 2-${3u} 1-${2u} 0-${1u}") { uintArrayOf(1u, 2u, 3u).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
-        expect("${1u}${2u}${3u}${4u}3210") {
+        expect(" 2-3 1-2 0-1") { uintArrayOf(1u, 2u, 3u).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
+        expect("12343210") {
             val numbers = uintArrayOf(1u, 2u, 3u, 4u)
             numbers.map { it.toString() }.foldRightIndexed("") { index, a, b -> a + b + index }
         }
@@ -110,8 +112,8 @@ class _UArraysTest {
         expect(8uL) { ulongArrayOf(1uL, 2uL, 3uL).foldRightIndexed(0uL) { i, e, acc -> acc + i.toULong() * e } }
         expect(10) { ulongArrayOf(1uL, 2uL, 3uL).foldRightIndexed(1) { i, e, acc -> acc + i + e.toInt() } }
         expect(15uL) { ulongArrayOf(1uL, 2uL, 3uL).foldRightIndexed(1uL) { i, e, acc -> acc * (i.toULong() + e) } }
-        expect(" 2-${3uL} 1-${2uL} 0-${1uL}") { ulongArrayOf(1uL, 2uL, 3uL).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
-        expect("${1uL}${2uL}${3uL}${4uL}3210") {
+        expect(" 2-3 1-2 0-1") { ulongArrayOf(1uL, 2uL, 3uL).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
+        expect("12343210") {
             val numbers = ulongArrayOf(1uL, 2uL, 3uL, 4uL)
             numbers.map { it.toString() }.foldRightIndexed("") { index, a, b -> a + b + index }
         }
@@ -122,8 +124,8 @@ class _UArraysTest {
         expect(8u) { ubyteArrayOf(1u, 2u, 3u).foldRightIndexed(0u) { i, e, acc -> acc + i.toUByte() * e } }
         expect(10) { ubyteArrayOf(1u, 2u, 3u).foldRightIndexed(1) { i, e, acc -> acc + i + e.toInt() } }
         expect(15u) { ubyteArrayOf(1u, 2u, 3u).foldRightIndexed(1u) { i, e, acc -> acc * (i.toUByte() + e) } }
-        expect(" 2-${3u} 1-${2u} 0-${1u}") { ubyteArrayOf(1u, 2u, 3u).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
-        expect("${1u}${2u}${3u}${4u}3210") {
+        expect(" 2-3 1-2 0-1") { ubyteArrayOf(1u, 2u, 3u).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
+        expect("12343210") {
             val numbers = ubyteArrayOf(1u, 2u, 3u, 4u)
             numbers.map { it.toString() }.foldRightIndexed("") { index, a, b -> a + b + index }
         }
@@ -134,8 +136,8 @@ class _UArraysTest {
         expect(8u) { ushortArrayOf(1u, 2u, 3u).foldRightIndexed(0u) { i, e, acc -> acc + i.toUShort() * e } }
         expect(10) { ushortArrayOf(1u, 2u, 3u).foldRightIndexed(1) { i, e, acc -> acc + i + e.toInt() } }
         expect(15u) { ushortArrayOf(1u, 2u, 3u).foldRightIndexed(1u) { i, e, acc -> acc * (i.toUShort() + e) } }
-        expect(" 2-${3u} 1-${2u} 0-${1u}") { ushortArrayOf(1u, 2u, 3u).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
-        expect("${1u}${2u}${3u}${4u}3210") {
+        expect(" 2-3 1-2 0-1") { ushortArrayOf(1u, 2u, 3u).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
+        expect("12343210") {
             val numbers = ushortArrayOf(1u, 2u, 3u, 4u)
             numbers.map { it.toString() }.foldRightIndexed("") { index, a, b -> a + b + index }
         }
@@ -359,6 +361,402 @@ class _UArraysTest {
         for (destIndex in listOf(-1, 2, 4)) {
             assertFailsWith<IndexOutOfBoundsException>("index: $destIndex") { newValues.copyInto(dest, destIndex, 0, 2) }
         } 
+    }
+
+    @Test
+    fun reverse_UIntArray() {
+        val arrays = (0..4).map { n -> (1..n).map { it.toUInt() }.toUIntArray() }
+        for (array in arrays) {
+            val original = array.toList()
+            array.reverse()
+            val reversed = array.toList()
+            assertEquals(original.asReversed(), reversed)
+        }
+    }
+
+    @Test
+    fun reverse_ULongArray() {
+        val arrays = (0..4).map { n -> (1..n).map { it.toULong() }.toULongArray() }
+        for (array in arrays) {
+            val original = array.toList()
+            array.reverse()
+            val reversed = array.toList()
+            assertEquals(original.asReversed(), reversed)
+        }
+    }
+
+    @Test
+    fun reverse_UByteArray() {
+        val arrays = (0..4).map { n -> (1..n).map { it.toUByte() }.toUByteArray() }
+        for (array in arrays) {
+            val original = array.toList()
+            array.reverse()
+            val reversed = array.toList()
+            assertEquals(original.asReversed(), reversed)
+        }
+    }
+
+    @Test
+    fun reverse_UShortArray() {
+        val arrays = (0..4).map { n -> (1..n).map { it.toUShort() }.toUShortArray() }
+        for (array in arrays) {
+            val original = array.toList()
+            array.reverse()
+            val reversed = array.toList()
+            assertEquals(original.asReversed(), reversed)
+        }
+    }
+
+    @Test
+    fun reverseRange_UIntArray() {
+        val arrays = (0..7).map { n -> n to (0 until n).map { it.toUInt() }.toUIntArray() }
+        for ((size, array) in arrays) {
+            for (fromIndex in 0 until size) {
+                for (toIndex in fromIndex..size) {
+                    val original = array.toMutableList()
+                    array.reverse(fromIndex, toIndex)
+                    val reversed = array.toMutableList()
+                    assertEquals(original.apply { subList(fromIndex, toIndex).reverse() }, reversed)
+                }
+            }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(-1, size) }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(0, size + 1) }
+            assertFailsWith<IllegalArgumentException> { array.reverse(0, -1) }
+        }
+    }
+
+    @Test
+    fun reverseRange_ULongArray() {
+        val arrays = (0..7).map { n -> n to (0 until n).map { it.toULong() }.toULongArray() }
+        for ((size, array) in arrays) {
+            for (fromIndex in 0 until size) {
+                for (toIndex in fromIndex..size) {
+                    val original = array.toMutableList()
+                    array.reverse(fromIndex, toIndex)
+                    val reversed = array.toMutableList()
+                    assertEquals(original.apply { subList(fromIndex, toIndex).reverse() }, reversed)
+                }
+            }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(-1, size) }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(0, size + 1) }
+            assertFailsWith<IllegalArgumentException> { array.reverse(0, -1) }
+        }
+    }
+
+    @Test
+    fun reverseRange_UByteArray() {
+        val arrays = (0..7).map { n -> n to (0 until n).map { it.toUByte() }.toUByteArray() }
+        for ((size, array) in arrays) {
+            for (fromIndex in 0 until size) {
+                for (toIndex in fromIndex..size) {
+                    val original = array.toMutableList()
+                    array.reverse(fromIndex, toIndex)
+                    val reversed = array.toMutableList()
+                    assertEquals(original.apply { subList(fromIndex, toIndex).reverse() }, reversed)
+                }
+            }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(-1, size) }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(0, size + 1) }
+            assertFailsWith<IllegalArgumentException> { array.reverse(0, -1) }
+        }
+    }
+
+    @Test
+    fun reverseRange_UShortArray() {
+        val arrays = (0..7).map { n -> n to (0 until n).map { it.toUShort() }.toUShortArray() }
+        for ((size, array) in arrays) {
+            for (fromIndex in 0 until size) {
+                for (toIndex in fromIndex..size) {
+                    val original = array.toMutableList()
+                    array.reverse(fromIndex, toIndex)
+                    val reversed = array.toMutableList()
+                    assertEquals(original.apply { subList(fromIndex, toIndex).reverse() }, reversed)
+                }
+            }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(-1, size) }
+            assertFailsWith<IndexOutOfBoundsException> { array.reverse(0, size + 1) }
+            assertFailsWith<IllegalArgumentException> { array.reverse(0, -1) }
+        }
+    }
+
+    @Test
+    fun reversed_UIntArray() {
+        assertEquals(listOf<UInt>(3u, 2u, 1u), uintArrayOf(1u, 2u, 3u).reversed())
+    }
+
+    @Test
+    fun reversed_ULongArray() {
+        assertEquals(listOf<ULong>(3uL, 2uL, 1uL), ulongArrayOf(1uL, 2uL, 3uL).reversed())
+    }
+
+    @Test
+    fun reversed_UByteArray() {
+        assertEquals(listOf<UByte>(3u, 2u, 1u), ubyteArrayOf(1u, 2u, 3u).reversed())
+    }
+
+    @Test
+    fun reversed_UShortArray() {
+        assertEquals(listOf<UShort>(3u, 2u, 1u), ushortArrayOf(1u, 2u, 3u).reversed())
+    }
+
+    @Test
+    fun reversedArray_UIntArray() {
+        assertArrayContentEquals(uintArrayOf(3u, 2u, 1u), uintArrayOf(1u, 2u, 3u).reversedArray())
+    }
+
+    @Test
+    fun reversedArray_ULongArray() {
+        assertArrayContentEquals(ulongArrayOf(3uL, 2uL, 1uL), ulongArrayOf(1uL, 2uL, 3uL).reversedArray())
+    }
+
+    @Test
+    fun reversedArray_UByteArray() {
+        assertArrayContentEquals(ubyteArrayOf(3u, 2u, 1u), ubyteArrayOf(1u, 2u, 3u).reversedArray())
+    }
+
+    @Test
+    fun reversedArray_UShortArray() {
+        assertArrayContentEquals(ushortArrayOf(3u, 2u, 1u), ushortArrayOf(1u, 2u, 3u).reversedArray())
+    }
+
+    @Test
+    fun shuffle_UIntArray() {
+        val data = UIntArray(100) { it.toUInt() }
+        val original = data.toMutableList()
+        data.shuffle()
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+    }
+
+    @Test
+    fun shuffle_ULongArray() {
+        val data = ULongArray(100) { it.toULong() }
+        val original = data.toMutableList()
+        data.shuffle()
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+    }
+
+    @Test
+    fun shuffle_UByteArray() {
+        val data = UByteArray(100) { it.toUByte() }
+        val original = data.toMutableList()
+        data.shuffle()
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+    }
+
+    @Test
+    fun shuffle_UShortArray() {
+        val data = UShortArray(100) { it.toUShort() }
+        val original = data.toMutableList()
+        data.shuffle()
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+    }
+
+    @Test
+    fun shuffleRandom_UIntArray() {
+        val data = UIntArray(16) { it.toUInt() }
+        val seed = Random.nextInt()
+        val original = data.toMutableList()
+        val originalShuffled = original.shuffled(Random(seed))
+        data.shuffle(Random(seed))
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(originalShuffled, shuffled)
+    }
+
+    @Test
+    fun shuffleRandom_ULongArray() {
+        val data = ULongArray(16) { it.toULong() }
+        val seed = Random.nextInt()
+        val original = data.toMutableList()
+        val originalShuffled = original.shuffled(Random(seed))
+        data.shuffle(Random(seed))
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(originalShuffled, shuffled)
+    }
+
+    @Test
+    fun shuffleRandom_UByteArray() {
+        val data = UByteArray(16) { it.toUByte() }
+        val seed = Random.nextInt()
+        val original = data.toMutableList()
+        val originalShuffled = original.shuffled(Random(seed))
+        data.shuffle(Random(seed))
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(originalShuffled, shuffled)
+    }
+
+    @Test
+    fun shuffleRandom_UShortArray() {
+        val data = UShortArray(16) { it.toUShort() }
+        val seed = Random.nextInt()
+        val original = data.toMutableList()
+        val originalShuffled = original.shuffled(Random(seed))
+        data.shuffle(Random(seed))
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(originalShuffled, shuffled)
+    }
+
+    @Test
+    fun sort_UIntArray() {
+        val data = uintArrayOf(5u, 2u, 1u, 9u, 80u, UInt.MIN_VALUE, UInt.MAX_VALUE)
+        data.sort()
+        assertArrayContentEquals(uintArrayOf(UInt.MIN_VALUE, 1u, 2u, 5u, 9u, 80u, UInt.MAX_VALUE), data)
+    }
+
+    @Test
+    fun sort_ULongArray() {
+        val data = ulongArrayOf(5uL, 2uL, 1uL, 9uL, 80uL, ULong.MIN_VALUE, ULong.MAX_VALUE)
+        data.sort()
+        assertArrayContentEquals(ulongArrayOf(ULong.MIN_VALUE, 1uL, 2uL, 5uL, 9uL, 80uL, ULong.MAX_VALUE), data)
+    }
+
+    @Test
+    fun sort_UByteArray() {
+        val data = ubyteArrayOf(5u, 2u, 1u, 9u, 80u, UByte.MIN_VALUE, UByte.MAX_VALUE)
+        data.sort()
+        assertArrayContentEquals(ubyteArrayOf(UByte.MIN_VALUE, 1u, 2u, 5u, 9u, 80u, UByte.MAX_VALUE), data)
+    }
+
+    @Test
+    fun sort_UShortArray() {
+        val data = ushortArrayOf(5u, 2u, 1u, 9u, 80u, UShort.MIN_VALUE, UShort.MAX_VALUE)
+        data.sort()
+        assertArrayContentEquals(ushortArrayOf(UShort.MIN_VALUE, 1u, 2u, 5u, 9u, 80u, UShort.MAX_VALUE), data)
+    }
+
+    @Test
+    fun sortDescending_UIntArray() {
+        val data = uintArrayOf(5u, 2u, 1u, 9u, 80u, UInt.MIN_VALUE, UInt.MAX_VALUE)
+        data.sortDescending()
+        assertArrayContentEquals(uintArrayOf(UInt.MIN_VALUE, 1u, 2u, 5u, 9u, 80u, UInt.MAX_VALUE).reversedArray(), data)
+    }
+
+    @Test
+    fun sortDescending_ULongArray() {
+        val data = ulongArrayOf(5uL, 2uL, 1uL, 9uL, 80uL, ULong.MIN_VALUE, ULong.MAX_VALUE)
+        data.sortDescending()
+        assertArrayContentEquals(ulongArrayOf(ULong.MIN_VALUE, 1uL, 2uL, 5uL, 9uL, 80uL, ULong.MAX_VALUE).reversedArray(), data)
+    }
+
+    @Test
+    fun sortDescending_UByteArray() {
+        val data = ubyteArrayOf(5u, 2u, 1u, 9u, 80u, UByte.MIN_VALUE, UByte.MAX_VALUE)
+        data.sortDescending()
+        assertArrayContentEquals(ubyteArrayOf(UByte.MIN_VALUE, 1u, 2u, 5u, 9u, 80u, UByte.MAX_VALUE).reversedArray(), data)
+    }
+
+    @Test
+    fun sortDescending_UShortArray() {
+        val data = ushortArrayOf(5u, 2u, 1u, 9u, 80u, UShort.MIN_VALUE, UShort.MAX_VALUE)
+        data.sortDescending()
+        assertArrayContentEquals(ushortArrayOf(UShort.MIN_VALUE, 1u, 2u, 5u, 9u, 80u, UShort.MAX_VALUE).reversedArray(), data)
+    }
+
+    @Test
+    fun sorted_UIntArray() {
+        uintArrayOf(3u, 7u, 1u).sorted().iterator().assertSorted { a, b -> a <= b }
+        uintArrayOf(1u, UInt.MAX_VALUE, UInt.MIN_VALUE).sorted().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sorted_ULongArray() {
+        ulongArrayOf(3uL, 7uL, 1uL).sorted().iterator().assertSorted { a, b -> a <= b }
+        ulongArrayOf(1uL, ULong.MAX_VALUE, ULong.MIN_VALUE).sorted().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sorted_UByteArray() {
+        ubyteArrayOf(3u, 7u, 1u).sorted().iterator().assertSorted { a, b -> a <= b }
+        ubyteArrayOf(1u, UByte.MAX_VALUE, UByte.MIN_VALUE).sorted().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sorted_UShortArray() {
+        ushortArrayOf(3u, 7u, 1u).sorted().iterator().assertSorted { a, b -> a <= b }
+        ushortArrayOf(1u, UShort.MAX_VALUE, UShort.MIN_VALUE).sorted().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sortedArray_UIntArray() {
+        uintArrayOf(3u, 7u, 1u).sortedArray().iterator().assertSorted { a, b -> a <= b }
+        uintArrayOf(1u, UInt.MAX_VALUE, UInt.MIN_VALUE).sortedArray().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sortedArray_ULongArray() {
+        ulongArrayOf(3uL, 7uL, 1uL).sortedArray().iterator().assertSorted { a, b -> a <= b }
+        ulongArrayOf(1uL, ULong.MAX_VALUE, ULong.MIN_VALUE).sortedArray().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sortedArray_UByteArray() {
+        ubyteArrayOf(3u, 7u, 1u).sortedArray().iterator().assertSorted { a, b -> a <= b }
+        ubyteArrayOf(1u, UByte.MAX_VALUE, UByte.MIN_VALUE).sortedArray().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sortedArray_UShortArray() {
+        ushortArrayOf(3u, 7u, 1u).sortedArray().iterator().assertSorted { a, b -> a <= b }
+        ushortArrayOf(1u, UShort.MAX_VALUE, UShort.MIN_VALUE).sortedArray().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sortedArrayDescending_UIntArray() {
+        uintArrayOf(3u, 7u, 1u).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+        uintArrayOf(1u, UInt.MAX_VALUE, UInt.MIN_VALUE).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedArrayDescending_ULongArray() {
+        ulongArrayOf(3uL, 7uL, 1uL).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+        ulongArrayOf(1uL, ULong.MAX_VALUE, ULong.MIN_VALUE).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedArrayDescending_UByteArray() {
+        ubyteArrayOf(3u, 7u, 1u).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+        ubyteArrayOf(1u, UByte.MAX_VALUE, UByte.MIN_VALUE).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedArrayDescending_UShortArray() {
+        ushortArrayOf(3u, 7u, 1u).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+        ushortArrayOf(1u, UShort.MAX_VALUE, UShort.MIN_VALUE).sortedArrayDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedDescending_UIntArray() {
+        uintArrayOf(3u, 7u, 1u).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        uintArrayOf(1u, UInt.MAX_VALUE, UInt.MIN_VALUE).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedDescending_ULongArray() {
+        ulongArrayOf(3uL, 7uL, 1uL).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        ulongArrayOf(1uL, ULong.MAX_VALUE, ULong.MIN_VALUE).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedDescending_UByteArray() {
+        ubyteArrayOf(3u, 7u, 1u).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        ubyteArrayOf(1u, UByte.MAX_VALUE, UByte.MIN_VALUE).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedDescending_UShortArray() {
+        ushortArrayOf(3u, 7u, 1u).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        ushortArrayOf(1u, UShort.MAX_VALUE, UShort.MIN_VALUE).sortedDescending().iterator().assertSorted { a, b -> a >= b }
     }
 
 }

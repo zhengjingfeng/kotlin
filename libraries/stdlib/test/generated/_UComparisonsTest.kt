@@ -192,7 +192,7 @@ class _UComparisonsTest {
         expect(55.toUByte()) { minOf(58.toUByte(), 126.toUByte(), 55.toUByte()) }
         expect(23.toUByte()) { minOf(Random.nextInt(23..UByte.MAX_VALUE.toInt()).toUByte(), 23.toUByte(), Random.nextInt(23..UByte.MAX_VALUE.toInt()).toUByte()) }
         expect(UByte.MAX_VALUE) { minOf(UByte.MAX_VALUE, UByte.MAX_VALUE, UByte.MAX_VALUE) }
-            expect(UByte.MIN_VALUE) { minOf(UByte.MIN_VALUE, UByte.MAX_VALUE, 0.toUByte()) }
+            expect(UByte.MIN_VALUE) { minOf(UByte.MIN_VALUE, UByte.MAX_VALUE, 0u) }
             
     }
 
@@ -202,7 +202,7 @@ class _UComparisonsTest {
         expect(55.toUShort()) { minOf(58.toUShort(), 126.toUShort(), 55.toUShort()) }
         expect(23.toUShort()) { minOf(Random.nextInt(23..UShort.MAX_VALUE.toInt()).toUShort(), 23.toUShort(), Random.nextInt(23..UShort.MAX_VALUE.toInt()).toUShort()) }
         expect(UShort.MAX_VALUE) { minOf(UShort.MAX_VALUE, UShort.MAX_VALUE, UShort.MAX_VALUE) }
-            expect(UShort.MIN_VALUE) { minOf(UShort.MIN_VALUE, UShort.MAX_VALUE, 0.toUShort()) }
+            expect(UShort.MIN_VALUE) { minOf(UShort.MIN_VALUE, UShort.MAX_VALUE, 0u) }
             
     }
 
@@ -212,7 +212,7 @@ class _UComparisonsTest {
         expect(55u) { minOf(58u, 126u, 55u, 87u) }
         expect(21u) { minOf(Random.nextUInt(23u..UInt.MAX_VALUE), 23u, Random.nextUInt(23u..UInt.MAX_VALUE), 21u) }
         expect(UInt.MAX_VALUE) { minOf(UInt.MAX_VALUE, UInt.MAX_VALUE, UInt.MAX_VALUE, UInt.MAX_VALUE) }
-            expect(UInt.MIN_VALUE) { minOf(UInt.MIN_VALUE, UInt.MAX_VALUE, 0u, 1u) }
+            assertEquals(UInt.MIN_VALUE, minOf(UInt.MIN_VALUE, UInt.MAX_VALUE, 0u, 1u))
             
     }
 
@@ -222,7 +222,7 @@ class _UComparisonsTest {
         expect(55uL) { minOf(58uL, 126uL, 55uL, 87uL) }
         expect(21uL) { minOf(Random.nextULong(23uL..ULong.MAX_VALUE), 23uL, Random.nextULong(23uL..ULong.MAX_VALUE), 21uL) }
         expect(ULong.MAX_VALUE) { minOf(ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE, ULong.MAX_VALUE) }
-            expect(ULong.MIN_VALUE) { minOf(ULong.MIN_VALUE, ULong.MAX_VALUE, 0uL, 1uL) }
+            assertEquals(ULong.MIN_VALUE, minOf(ULong.MIN_VALUE, ULong.MAX_VALUE, 0uL, 1uL))
             
     }
 
@@ -232,7 +232,7 @@ class _UComparisonsTest {
         expect(55.toUByte()) { minOf(58.toUByte(), 126.toUByte(), 55.toUByte(), 87.toUByte()) }
         expect(21.toUByte()) { minOf(Random.nextInt(23..UByte.MAX_VALUE.toInt()).toUByte(), 23.toUByte(), Random.nextInt(23..UByte.MAX_VALUE.toInt()).toUByte(), 21.toUByte()) }
         expect(UByte.MAX_VALUE) { minOf(UByte.MAX_VALUE, UByte.MAX_VALUE, UByte.MAX_VALUE, UByte.MAX_VALUE) }
-            expect(UByte.MIN_VALUE) { minOf(UByte.MIN_VALUE, UByte.MAX_VALUE, 0.toUByte(), 1.toUByte()) }
+            assertEquals(UByte.MIN_VALUE, minOf(UByte.MIN_VALUE, UByte.MAX_VALUE, 0.toUByte(), 1.toUByte()))
             
     }
 
@@ -242,7 +242,7 @@ class _UComparisonsTest {
         expect(55.toUShort()) { minOf(58.toUShort(), 126.toUShort(), 55.toUShort(), 87.toUShort()) }
         expect(21.toUShort()) { minOf(Random.nextInt(23..UShort.MAX_VALUE.toInt()).toUShort(), 23.toUShort(), Random.nextInt(23..UShort.MAX_VALUE.toInt()).toUShort(), 21.toUShort()) }
         expect(UShort.MAX_VALUE) { minOf(UShort.MAX_VALUE, UShort.MAX_VALUE, UShort.MAX_VALUE, UShort.MAX_VALUE) }
-            expect(UShort.MIN_VALUE) { minOf(UShort.MIN_VALUE, UShort.MAX_VALUE, 0.toUShort(), 1.toUShort()) }
+            assertEquals(UShort.MIN_VALUE, minOf(UShort.MIN_VALUE, UShort.MAX_VALUE, 0.toUShort(), 1.toUShort()))
             
     }
 

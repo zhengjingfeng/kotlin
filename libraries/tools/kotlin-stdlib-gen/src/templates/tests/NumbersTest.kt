@@ -5,41 +5,28 @@
 
 package templates.tests
 
+import templates.*
 import templates.Family.*
-import templates.PrimitiveType
-import templates.TestTemplateGroupBase
-import templates.builder
-import templates.test
 
 object NumbersTest : TestTemplateGroupBase() {
     val f_rotate = test("rotate()") {
-        include(
-            Primitives,
-            setOf(
-                PrimitiveType.Byte,
-                PrimitiveType.Short,
-                PrimitiveType.Int,
-                PrimitiveType.Long
-            )
-        )
+        include(Primitives, setOf(PrimitiveType.Byte, PrimitiveType.Short, PrimitiveType.Int, PrimitiveType.Long))
         include(Unsigned)
     } builder {
-        val p = primitive!!
-        val type = p.name
         body {
             """
-            fun test(value: $type, n: Int, expected: $type) {
+            fun test(value: $P, n: Int, expected: $P) {
                 assertEquals(expected, value.rotateLeft(n))
                 assertEquals(expected, value.rotateRight(-n))
             }
     
-            fun testCyclic(value: $type) {
-                for (n in -2 * $type.SIZE_BITS..2 * $type.SIZE_BITS) {
+            fun testCyclic(value: $P) {
+                for (n in -2 * $P.SIZE_BITS..2 * $P.SIZE_BITS) {
                     val rl = value.rotateLeft(n)
                     val rr = value.rotateRight(-n)
                     assertEquals(rl, rr)
-                    assertEquals(rl, value.rotateLeft(n % $type.SIZE_BITS))
-                    assertEquals(rr, value.rotateRight((-n) % $type.SIZE_BITS))
+                    assertEquals(rl, value.rotateLeft(n % $P.SIZE_BITS))
+                    assertEquals(rr, value.rotateRight((-n) % $P.SIZE_BITS))
                     assertEquals(value, value.rotateLeft(n).rotateLeft(-n))
                     assertEquals(value, value.rotateRight(n).rotateRight(-n))
                 }
@@ -109,41 +96,32 @@ object NumbersTest : TestTemplateGroupBase() {
         bodyAppend {
             """
             repeat(100) {
-                testCyclic(${p.randomNext()})
+                testCyclic(${primitive!!.randomNext()})
             }
             """
         }
     }
 
     val f_bits = test("bits()") {
-        include(
-            Primitives,
-            setOf(
-                PrimitiveType.Byte,
-                PrimitiveType.Short,
-                PrimitiveType.Int,
-                PrimitiveType.Long
-            )
-        )
+        include(Primitives, setOf(PrimitiveType.Byte, PrimitiveType.Short, PrimitiveType.Int, PrimitiveType.Long))
         include(Unsigned)
     } builder {
-        val p = primitive!!
-        val type = p.name
         body {
+            val sizeBits = primitive!!.SIZE_BITS
             """
-            fun test(value: $type, oneBits: Int, leadingZeroes: Int, trailingZeroes: Int) {
+            fun test(value: $P, oneBits: Int, leadingZeroes: Int, trailingZeroes: Int) {
                 assertEquals(oneBits, value.countOneBits())
                 assertEquals(leadingZeroes, value.countLeadingZeroBits())
                 assertEquals(trailingZeroes, value.countTrailingZeroBits())
-                val highestBit = if (leadingZeroes < $type.SIZE_BITS) ${literal(1)}.shl($type.SIZE_BITS - leadingZeroes - 1).to$type() else ${literal(0)}
-                val lowestBit = if (trailingZeroes < $type.SIZE_BITS) ${literal(1)}.shl(trailingZeroes).to$type() else ${literal(0)}
+                val highestBit = if (leadingZeroes < $P.SIZE_BITS) ONE.shl($P.SIZE_BITS - leadingZeroes - 1).to$P() else ZERO
+                val lowestBit = if (trailingZeroes < $P.SIZE_BITS) ONE.shl(trailingZeroes).to$P() else ZERO
                 assertEquals(highestBit, value.takeHighestOneBit())
                 assertEquals(lowestBit, value.takeLowestOneBit())
             }
             
-            test(${literal(0)}, 0, ${p.SIZE_BITS}, ${p.SIZE_BITS})
-            test(${literal(1)}, 1, ${p.SIZE_BITS - 1}, 0)
-            test(${literal(2)}, 1, ${p.SIZE_BITS - 2}, 1)
+            test(ZERO, 0, $sizeBits, $sizeBits)
+            test(ONE, 1, ${sizeBits - 1}, 0)
+            test(TWO, 1, ${sizeBits - 2}, 1)
             """
         }
         bodyAppend(Primitives, PrimitiveType.Byte) {

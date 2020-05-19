@@ -10,6 +10,8 @@ package test.collections
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
+import test.comparisons.STRING_CASE_INSENSITIVE_ORDER
+import kotlin.random.*
 import kotlin.test.*
 
 class _CollectionsTest {
@@ -18,7 +20,7 @@ class _CollectionsTest {
         expect(8) { listOf<Int>(1, 2, 3).foldIndexed(0) { i, acc, e -> acc + i.toInt() * e } }
         expect(10) { listOf<Int>(1, 2, 3).foldIndexed(1) { i, acc, e -> acc + i + e.toInt() } }
         expect(15) { listOf<Int>(1, 2, 3).foldIndexed(1) { i, acc, e -> acc * (i.toInt() + e) } }
-        expect(" 0-${1} 1-${2} 2-${3}") { listOf<Int>(1, 2, 3).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
+        expect(" 0-1 1-2 2-3") { listOf<Int>(1, 2, 3).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
         expect(42) {
             val numbers = listOf<Int>(1, 2, 3, 4)
             numbers.foldIndexed(0) { index, a, b -> index.toInt() * (a + b) }
@@ -27,7 +29,7 @@ class _CollectionsTest {
             val numbers = listOf<Int>()
             numbers.foldIndexed(0) { index, a, b -> index.toInt() * (a + b) }
         }
-        expect("${1}${1}${2}${3}${4}") {
+        expect("11234") {
             val numbers = listOf<Int>(1, 2, 3, 4)
             numbers.map { it.toString() }.foldIndexed("") { index, a, b -> if (index == 0) a + b + b else a + b }
         }
@@ -38,8 +40,8 @@ class _CollectionsTest {
         expect(8) { listOf<Int>(1, 2, 3).foldRightIndexed(0) { i, e, acc -> acc + i.toInt() * e } }
         expect(10) { listOf<Int>(1, 2, 3).foldRightIndexed(1) { i, e, acc -> acc + i + e.toInt() } }
         expect(15) { listOf<Int>(1, 2, 3).foldRightIndexed(1) { i, e, acc -> acc * (i.toInt() + e) } }
-        expect(" 2-${3} 1-${2} 0-${1}") { listOf<Int>(1, 2, 3).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
-        expect("${1}${2}${3}${4}3210") {
+        expect(" 2-3 1-2 0-1") { listOf<Int>(1, 2, 3).foldRightIndexed("") { i, e, acc -> "$acc $i-$e" } }
+        expect("12343210") {
             val numbers = listOf<Int>(1, 2, 3, 4)
             numbers.map { it.toString() }.foldRightIndexed("") { index, a, b -> a + b + index }
         }
@@ -52,8 +54,7 @@ class _CollectionsTest {
         assertEquals(2, listOf<Int>(3, 2).minBy { it * it })
         assertEquals(3, listOf<Int>(3, 2).minBy { "a" })
         assertEquals(2, listOf<Int>(3, 2).minBy { it.toString() })
-            assertEquals(3, listOf<Int>(2, 3).minBy { -it })
-            
+        assertEquals(3, listOf<Int>(2, 3).minBy { -it })
         assertEquals('b', listOf('a', 'b').maxBy { "x$it" })
         assertEquals("abc", listOf("b", "abc").maxBy { it.length })
     }
@@ -63,19 +64,7 @@ class _CollectionsTest {
         assertEquals(null, listOf<Int>().minWith(naturalOrder()))
         assertEquals(1, listOf<Int>(1).minWith(naturalOrder()))
         assertEquals(4, listOf<Int>(2, 3, 4).minWith(compareBy { it % 4 }))
-    }
-
-    @Test
-    fun indexOf_Iterable() {
-        expect(-1) { listOf<Int>(1, 2, 3).indexOf(0) }
-        expect(0) { listOf<Int>(1, 2, 3).indexOf(1) }
-        expect(1) { listOf<Int>(1, 2, 3).indexOf(2) }
-        expect(2) { listOf<Int>(1, 2, 3).indexOf(3) } 
-        expect(-1) { listOf("cat", "dog", "bird").indexOf("mouse") }
-        expect(0) { listOf("cat", "dog", "bird").indexOf("cat") }
-        expect(1) { listOf("cat", "dog", "bird").indexOf("dog") }
-        expect(2) { listOf("cat", "dog", "bird").indexOf("bird") }
-        expect(0) { listOf(null, "dog", null).indexOf(null as String?)}
+        assertEquals("a", listOf("a", "B").minWith(STRING_CASE_INSENSITIVE_ORDER))
     }
 
     @Test
@@ -92,7 +81,7 @@ class _CollectionsTest {
     }
 
     @Test
-    fun indexOfFirst_Iterable() {
+    fun indexOfFirst_List() {
         expect(-1) { listOf<Int>(1, 2, 3).indexOfFirst { it == 0 } }
         expect(0) { listOf<Int>(1, 2, 3).indexOfFirst { it % 2 == 1 } }
         expect(1) { listOf<Int>(1, 2, 3).indexOfFirst { it % 2 == 0 } }
@@ -104,15 +93,116 @@ class _CollectionsTest {
     }
 
     @Test
-    fun indexOfFirst_List() {
-        expect(-1) { listOf<Int>(1, 2, 3).indexOfFirst { it == 0 } }
-        expect(0) { listOf<Int>(1, 2, 3).indexOfFirst { it % 2 == 1 } }
-        expect(1) { listOf<Int>(1, 2, 3).indexOfFirst { it % 2 == 0 } }
-        expect(2) { listOf<Int>(1, 2, 3).indexOfFirst { it == 3 } }
-        expect(-1) { listOf("cat", "dog", "bird").indexOfFirst { it.contains("p") } }
-        expect(0) { listOf("cat", "dog", "bird").indexOfFirst { it.startsWith('c') } }
-        expect(1) { listOf("cat", "dog", "bird").indexOfFirst { it.startsWith('d') } }
-        expect(2) { listOf("cat", "dog", "bird").indexOfFirst { it.endsWith('d') } }
+    fun reversed_Iterable() {
+        assertEquals(listOf<Int>(3, 2, 1), listOf<Int>(1, 2, 3).reversed())
+        assertEquals(listOf("3", "2", "1"), listOf("1", "2", "3").reversed())
+    }
+
+    @Test
+    fun shuffle_List() {
+        val data = MutableList(100) { it.toInt() }
+        val original = data.toMutableList()
+        data.shuffle()
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+    }
+
+    @Test
+    fun shuffleRandom_List() {
+        val data = MutableList(16) { it.toInt() }
+        val seed = Random.nextInt()
+        val original = data.toMutableList()
+        val originalShuffled = original.shuffled(Random(seed))
+        data.shuffle(Random(seed))
+        val shuffled = data.toMutableList()
+        assertNotEquals(original, shuffled)
+        assertEquals(originalShuffled, shuffled)
+    }
+
+    @Test
+    fun sort_List() {
+        val data = mutableListOf(5, 2, 1, 9, 80, Int.MIN_VALUE, Int.MAX_VALUE)
+        data.sort()
+        assertEquals(listOf(Int.MIN_VALUE, 1, 2, 5, 9, 80, Int.MAX_VALUE), data)
+        val strings = mutableListOf("9", "80", "all", "Foo")
+        strings.sort()
+        assertEquals(listOf("80", "9", "Foo", "all"), strings) 
+    }
+
+    @Test
+    fun sortBy_List() {
+        val data = mutableListOf("aa" to 20, "ab" to 3, "aa" to 3)
+        data.sortBy { it.second }
+        assertEquals(listOf("ab" to 3, "aa" to 3, "aa" to 20), data)
+        data.sortBy { it.first }
+        assertEquals(listOf("aa" to 3, "aa" to 20, "ab" to 3), data)
+        data.sortBy { (it.first + it.second).length }
+        assertEquals(listOf("aa" to 3, "ab" to 3, "aa" to 20), data)
+    }
+
+    @Test
+    fun sortByDescending_List() {
+        val data = mutableListOf("aa" to 20, "ab" to 3, "aa" to 3)
+        data.sortByDescending { it.second }
+        assertEquals(listOf("ab" to 3, "aa" to 3, "aa" to 20).reversed(), data)
+        data.sortByDescending { it.first }
+        assertEquals(listOf("aa" to 3, "aa" to 20, "ab" to 3).reversed(), data)
+        data.sortByDescending { (it.first + it.second).length }
+        assertEquals(listOf("aa" to 3, "ab" to 3, "aa" to 20).reversed(), data)
+    }
+
+    @Test
+    fun sortDescending_List() {
+        val data = mutableListOf(5, 2, 1, 9, 80, Int.MIN_VALUE, Int.MAX_VALUE)
+        data.sortDescending()
+        assertEquals(listOf(Int.MIN_VALUE, 1, 2, 5, 9, 80, Int.MAX_VALUE).reversed(), data)
+        val strings = mutableListOf("9", "80", "all", "Foo")
+        strings.sortDescending()
+        assertEquals(listOf("80", "9", "Foo", "all").reversed(), strings) 
+    }
+
+    @Test
+    fun sorted_Iterable() {
+        listOf<Int>(3, 7, 1).sorted().iterator().assertSorted { a, b -> a <= b }
+        listOf(1, Int.MAX_VALUE, Int.MIN_VALUE).sorted().iterator().assertSorted { a, b -> a <= b }
+        listOf("ac", "aD", "aba").sorted().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sortedBy_List() {
+        val values = arrayOf("ac", "aD", "aba")
+        val indices = listOf<Int>(0, 1, 2)
+        assertEquals(listOf<Int>(1, 2, 0), indices.sortedBy { values[it.toInt()] }) 
+        assertEquals(listOf("two" to 3, "three" to 20), listOf("three" to 20, "two" to 3).sortedBy { it.second })
+        assertEquals(listOf("three" to 20, "two" to 3), listOf("three" to 20, "two" to 3).sortedBy { it.first })
+    }
+
+    @Test
+    fun sortedByDescending_List() {
+        val values = arrayOf("ac", "aD", "aba")
+        val indices = listOf<Int>(0, 1, 2)
+        assertEquals(listOf<Int>(1, 2, 0).reversed(), indices.sortedByDescending { values[it.toInt()] }) 
+        assertEquals(listOf("two" to 3, "three" to 20).reversed(), listOf("three" to 20, "two" to 3).sortedByDescending { it.second })
+        assertEquals(listOf("three" to 20, "two" to 3).reversed(), listOf("three" to 20, "two" to 3).sortedByDescending { it.first })
+    }
+
+    @Test
+    fun sortedDescending_Iterable() {
+        listOf<Int>(3, 7, 1).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        listOf(1, Int.MAX_VALUE, Int.MIN_VALUE).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        listOf("ac", "aD", "aba").sortedDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedWith_Iterable() {
+        val comparator = compareBy { it: Int -> it % 3 }.thenByDescending { it }
+        listOf<Int>(0, 1, 2, 3, 4, 5).sortedWith(comparator).iterator().assertSorted { a, b -> comparator.compare(a, b) <= 0 }
+        val comparator1 = compareBy<String> { it.toUpperCase().reversed() }
+        val data = listOf("cat", "dad", "BAD")
+        assertEquals(listOf("BAD", "dad", "cat"), data.sortedWith(comparator1))
+        assertEquals(listOf("cat", "dad", "BAD"), data.sortedWith(comparator1.reversed()))
+        assertEquals(listOf("BAD", "dad", "cat"), data.sortedWith(comparator1.reversed().reversed()))
     }
 
 }

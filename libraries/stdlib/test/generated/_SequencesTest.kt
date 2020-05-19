@@ -10,6 +10,8 @@ package test.sequences
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
+import test.comparisons.STRING_CASE_INSENSITIVE_ORDER
+import test.collections.assertSorted
 import kotlin.test.*
 
 class _SequencesTest {
@@ -18,7 +20,7 @@ class _SequencesTest {
         expect(8) { sequenceOf<Int>(1, 2, 3).foldIndexed(0) { i, acc, e -> acc + i.toInt() * e } }
         expect(10) { sequenceOf<Int>(1, 2, 3).foldIndexed(1) { i, acc, e -> acc + i + e.toInt() } }
         expect(15) { sequenceOf<Int>(1, 2, 3).foldIndexed(1) { i, acc, e -> acc * (i.toInt() + e) } }
-        expect(" 0-${1} 1-${2} 2-${3}") { sequenceOf<Int>(1, 2, 3).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
+        expect(" 0-1 1-2 2-3") { sequenceOf<Int>(1, 2, 3).foldIndexed("") { i, acc, e -> "$acc $i-$e" } }
         expect(42) {
             val numbers = sequenceOf<Int>(1, 2, 3, 4)
             numbers.foldIndexed(0) { index, a, b -> index.toInt() * (a + b) }
@@ -27,7 +29,7 @@ class _SequencesTest {
             val numbers = sequenceOf<Int>()
             numbers.foldIndexed(0) { index, a, b -> index.toInt() * (a + b) }
         }
-        expect("${1}${1}${2}${3}${4}") {
+        expect("11234") {
             val numbers = sequenceOf<Int>(1, 2, 3, 4)
             numbers.map { it.toString() }.foldIndexed("") { index, a, b -> if (index == 0) a + b + b else a + b }
         }
@@ -40,8 +42,7 @@ class _SequencesTest {
         assertEquals(2, sequenceOf<Int>(3, 2).minBy { it * it })
         assertEquals(3, sequenceOf<Int>(3, 2).minBy { "a" })
         assertEquals(2, sequenceOf<Int>(3, 2).minBy { it.toString() })
-            assertEquals(3, sequenceOf<Int>(2, 3).minBy { -it })
-            
+        assertEquals(3, sequenceOf<Int>(2, 3).minBy { -it })
         assertEquals('b', sequenceOf('a', 'b').maxBy { "x$it" })
         assertEquals("abc", sequenceOf("b", "abc").maxBy { it.length })
     }
@@ -51,6 +52,7 @@ class _SequencesTest {
         assertEquals(null, sequenceOf<Int>().minWith(naturalOrder()))
         assertEquals(1, sequenceOf<Int>(1).minWith(naturalOrder()))
         assertEquals(4, sequenceOf<Int>(2, 3, 4).minWith(compareBy { it % 4 }))
+        assertEquals("a", sequenceOf("a", "B").minWith(STRING_CASE_INSENSITIVE_ORDER))
     }
 
     @Test
@@ -76,6 +78,31 @@ class _SequencesTest {
         expect(0) { sequenceOf("cat", "dog", "bird").indexOfFirst { it.startsWith('c') } }
         expect(1) { sequenceOf("cat", "dog", "bird").indexOfFirst { it.startsWith('d') } }
         expect(2) { sequenceOf("cat", "dog", "bird").indexOfFirst { it.endsWith('d') } }
+    }
+
+    @Test
+    fun sorted_Sequence() {
+        sequenceOf<Int>(3, 7, 1).sorted().iterator().assertSorted { a, b -> a <= b }
+        sequenceOf(1, Int.MAX_VALUE, Int.MIN_VALUE).sorted().iterator().assertSorted { a, b -> a <= b }
+        sequenceOf("ac", "aD", "aba").sorted().iterator().assertSorted { a, b -> a <= b }
+    }
+
+    @Test
+    fun sortedDescending_Sequence() {
+        sequenceOf<Int>(3, 7, 1).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        sequenceOf(1, Int.MAX_VALUE, Int.MIN_VALUE).sortedDescending().iterator().assertSorted { a, b -> a >= b }
+        sequenceOf("ac", "aD", "aba").sortedDescending().iterator().assertSorted { a, b -> a >= b }
+    }
+
+    @Test
+    fun sortedWith_Sequence() {
+        val comparator = compareBy { it: Int -> it % 3 }.thenByDescending { it }
+        sequenceOf<Int>(0, 1, 2, 3, 4, 5).sortedWith(comparator).iterator().assertSorted { a, b -> comparator.compare(a, b) <= 0 }
+        val comparator1 = compareBy<String> { it.toUpperCase().reversed() }
+        val data = sequenceOf("cat", "dad", "BAD")
+        assertEquals(sequenceOf("BAD", "dad", "cat"), data.sortedWith(comparator1))
+        assertEquals(sequenceOf("cat", "dad", "BAD"), data.sortedWith(comparator1.reversed()))
+        assertEquals(sequenceOf("BAD", "dad", "cat"), data.sortedWith(comparator1.reversed().reversed()))
     }
 
 }

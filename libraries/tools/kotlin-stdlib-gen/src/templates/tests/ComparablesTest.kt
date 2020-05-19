@@ -19,210 +19,202 @@ object ComparablesTest : TestTemplateGroupBase() {
 
 
     val f_minOf_2 = test("minOf_2()") {
-        //        include(Generic)
+        include(Generic)
         include(Primitives, PrimitiveType.numericPrimitives)
         include(Unsigned)
     } builder {
         sourceFile(f.sourceFileComparisons)
 
-        val p = primitive!!
-        val type = p.name
-
+        val p = primitive ?: PrimitiveType.Int
+        val minOf = if (f == Generic) "minOf<${p.name}>" else "minOf"
         body {
             """
-            expect(${convert(1)}) { minOf(${convert(2)}, ${convert(1)}) }
-            expect(${convert(58)}) { minOf(${convert(58)}, ${convert(126)}) }
-            expect(${convert(23)}) { minOf(${p.randomNextFrom(23)}, ${convert(23)}) }
-            expect($type.MIN_VALUE) { minOf($type.MIN_VALUE, $type.MAX_VALUE) }
-            expect($type.MAX_VALUE) { minOf($type.MAX_VALUE, $type.MAX_VALUE) }
+            expect(${toP(1)}) { $minOf(${toP(2)}, ${toP(1)}) }
+            expect(${toP(58)}) { $minOf(${toP(58)}, ${toP(126)}) }
+            expect(${toP(23)}) { $minOf(${p.randomNextFrom(23)}, ${toP(23)}) }
+            expect(MIN_VALUE) { $minOf(MIN_VALUE, MAX_VALUE) }
+            expect(MAX_VALUE) { $minOf(MAX_VALUE, MAX_VALUE) }
             """
         }
         if (p.isFloatingPoint()) {
             bodyAppend {
-                val f = if (p == PrimitiveType.Float) "f" else ""
                 """
-                assertEquals(-0.0$f, minOf(0.0$f, -0.0$f))
-                assertEquals(-0.0$f, minOf(-0.0$f, 0.0$f))
-                assertEquals($type.NEGATIVE_INFINITY, minOf($type.NEGATIVE_INFINITY, $type.POSITIVE_INFINITY))
+                assertEquals(-ZERO, $minOf(ZERO, -ZERO))
+                assertEquals(-ZERO, $minOf(-ZERO, ZERO))
+                assertEquals(NEGATIVE_INFINITY, $minOf(NEGATIVE_INFINITY, POSITIVE_INFINITY))
                 """
             }
         }
     }
 
     val f_minOf_3 = test("minOf_3()") {
-        //        include(Generic)
+        include(Generic)
         include(Primitives, PrimitiveType.numericPrimitives)
         include(Unsigned)
     } builder {
         sourceFile(f.sourceFileComparisons)
 
-        val p = primitive!!
-        val type = p.name
-
+        val p = primitive ?: PrimitiveType.Int
+        val minOf = if (f == Generic) "minOf<${p.name}>" else "minOf"
         body {
             """
-            expect(${convert(1)}) { minOf(${convert(2)}, ${convert(1)}, ${convert(3)}) }
-            expect(${convert(55)}) { minOf(${convert(58)}, ${convert(126)}, ${convert(55)}) }
-            expect(${convert(23)}) { minOf(${p.randomNextFrom(23)}, ${convert(23)}, ${p.randomNextFrom(23)}) }
-            expect($type.MAX_VALUE) { minOf($type.MAX_VALUE, $type.MAX_VALUE, $type.MAX_VALUE) }
+            expect(${toP(1)}) { $minOf(${toP(2)}, ${toP(1)}, ${toP(3)}) }
+            expect(${toP(55)}) { $minOf(${toP(58)}, ${toP(126)}, ${toP(55)}) }
+            expect(${toP(23)}) { $minOf(${p.randomNextFrom(23)}, ${toP(23)}, ${p.randomNextFrom(23)}) }
+            expect(MAX_VALUE) { $minOf(MAX_VALUE, MAX_VALUE, MAX_VALUE) }
             """
         }
         if (p.isFloatingPoint()) {
             bodyAppend {
-                val f = if (p == PrimitiveType.Float) "f" else ""
                 """
-                expect(${literal(0)}) { minOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}) }
-                assertEquals(-0.0$f, minOf(0.0$f, -0.0$f, -0.0$f))
-                assertEquals(-0.0$f, minOf(-0.0$f, 0.0$f, 0.0$f))
-                assertEquals($type.MIN_VALUE, minOf($type.POSITIVE_INFINITY, $type.MAX_VALUE, $type.MIN_VALUE))
+                expect(ZERO) { $minOf(MIN_VALUE, MAX_VALUE, ZERO) }
+                assertEquals(-ZERO, $minOf(ZERO, -ZERO, -ZERO))
+                assertEquals(-ZERO, $minOf(-ZERO, ZERO, ZERO))
+                assertEquals(MIN_VALUE, $minOf(POSITIVE_INFINITY, MAX_VALUE, MIN_VALUE))
                 """
             }
         } else {
             bodyAppend {
                 """
-                expect($type.MIN_VALUE) { minOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}) }
+                expect(MIN_VALUE) { $minOf(MIN_VALUE, MAX_VALUE, ZERO) }
                 """
             }
         }
     }
 
     val f_minOf_vararg = test("minOf_vararg()") {
-        //        include(Generic)
+        include(Generic)
         include(Primitives, PrimitiveType.numericPrimitives)
         include(Unsigned)
     } builder {
         sourceFile(f.sourceFileComparisons)
 
-        val p = primitive!!
-        val type = p.name
-
+        val p = primitive ?: PrimitiveType.Int
+        val minOf = if (f == Generic) "minOf<${p.name}>" else "minOf"
         body {
             """
-            expect(${convert(1)}) { minOf(${convert(2)}, ${convert(1)}, ${convert(3)}, ${convert(10)}) }
-            expect(${convert(55)}) { minOf(${convert(58)}, ${convert(126)}, ${convert(55)}, ${convert(87)}) }
-            expect(${convert(21)}) { minOf(${p.randomNextFrom(23)}, ${convert(23)}, ${p.randomNextFrom(23)}, ${convert(21)}) }
-            expect($type.MAX_VALUE) { minOf($type.MAX_VALUE, $type.MAX_VALUE, $type.MAX_VALUE, $type.MAX_VALUE) }
+            expect(${toP(1)}) { $minOf(${toP(2)}, ${toP(1)}, ${toP(3)}, ${toP(10)}) }
+            expect(${toP(55)}) { $minOf(${toP(58)}, ${toP(126)}, ${toP(55)}, ${toP(87)}) }
+            expect(${toP(21)}) { $minOf(${p.randomNextFrom(23)}, ${toP(23)}, ${p.randomNextFrom(23)}, ${toP(21)}) }
+            expect(MAX_VALUE) { $minOf(MAX_VALUE, MAX_VALUE, MAX_VALUE, MAX_VALUE) }
             """
         }
         if (p.isFloatingPoint()) {
             bodyAppend {
                 val f = if (p == PrimitiveType.Float) "f" else ""
                 """
-                expect(${literal(0)}) { minOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}, ${convert(1)}) }
-                assertEquals(-0.0$f, minOf(0.0$f, -0.0$f, -0.0$f, 0.0$f))
-                assertEquals(-0.0$f, minOf(-0.0$f, 0.0$f, 0.0$f, -0.0$f))
-                assertEquals($type.NEGATIVE_INFINITY, minOf($type.POSITIVE_INFINITY, $type.NEGATIVE_INFINITY, $type.MAX_VALUE, $type.MIN_VALUE))
+                assertEquals(ZERO, $minOf(MIN_VALUE, MAX_VALUE, ${toP(0)}, ${toP(1)}))
+                assertEquals(-ZERO, $minOf(ZERO, -ZERO, -ZERO, ZERO))
+                assertEquals(-ZERO, $minOf(-ZERO, ZERO, ZERO, -ZERO))
+                assertEquals(NEGATIVE_INFINITY, $minOf(POSITIVE_INFINITY, NEGATIVE_INFINITY, MAX_VALUE, MIN_VALUE))
                 """
             }
         } else {
             bodyAppend {
                 """
-                expect($type.MIN_VALUE) { minOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}, ${convert(1)}) }
+                assertEquals(MIN_VALUE, $minOf(MIN_VALUE, MAX_VALUE, ${toP(0)}, ${toP(1)}))
                 """
             }
         }
     }
 
     val f_maxOf_2 = test("maxOf_2()") {
-        //        include(Generic)
+        include(Generic)
         include(Primitives, PrimitiveType.numericPrimitives)
         include(Unsigned)
     } builder {
         sourceFile(f.sourceFileComparisons)
 
-        val p = primitive!!
-        val type = p.name
-
+        val p = primitive ?: PrimitiveType.Int
+        val maxOf = if (f == Generic) "maxOf<${p.name}>" else "maxOf"
         body {
             """
-            expect(${convert(2)}) { maxOf(${convert(2)}, ${convert(1)}) }
-            expect(${convert(126)}) { maxOf(${convert(58)}, ${convert(126)}) }
-            expect(${convert(23)}) { maxOf(${p.randomNextUntil(23)}, ${convert(23)}) }
-            expect($type.MAX_VALUE) { maxOf($type.MIN_VALUE, $type.MAX_VALUE) }
-            expect($type.MIN_VALUE) { maxOf($type.MIN_VALUE, $type.MIN_VALUE) }
+            expect(${toP(2)}) { $maxOf(${toP(2)}, ${toP(1)}) }
+            expect(${toP(126)}) { $maxOf(${toP(58)}, ${toP(126)}) }
+            expect(${toP(23)}) { $maxOf(${p.randomNextUntil(23)}, ${toP(23)}) }
+            expect(MAX_VALUE) { $maxOf(MIN_VALUE, MAX_VALUE) }
+            expect(MIN_VALUE) { $maxOf(MIN_VALUE, MIN_VALUE) }
             """
         }
         if (p.isFloatingPoint()) {
             bodyAppend {
                 val f = if (p == PrimitiveType.Float) "f" else ""
                 """
-                assertEquals(0.0$f, maxOf(0.0$f, -0.0$f))
-                assertEquals(0.0$f, maxOf(-0.0$f, 0.0$f))
-                assertEquals($type.POSITIVE_INFINITY, maxOf($type.NEGATIVE_INFINITY, $type.POSITIVE_INFINITY))
+                assertEquals(ZERO, $maxOf(ZERO, -ZERO))
+                assertEquals(ZERO, $maxOf(-ZERO, ZERO))
+                assertEquals(POSITIVE_INFINITY, $maxOf(NEGATIVE_INFINITY, POSITIVE_INFINITY))
                 """
             }
         }
     }
 
     val f_maxOf_3 = test("maxOf_3()") {
-        //        include(Generic)
+        include(Generic)
         include(Primitives, PrimitiveType.numericPrimitives)
         include(Unsigned)
     } builder {
         sourceFile(f.sourceFileComparisons)
 
-        val p = primitive!!
-        val type = p.name
-
+        val p = primitive ?: PrimitiveType.Int
+        val maxOf = if (f == Generic) "maxOf<${p.name}>" else "maxOf"
         body {
             """
-            expect(${convert(3)}) { maxOf(${convert(2)}, ${convert(1)}, ${convert(3)}) }
-            expect(${convert(126)}) { maxOf(${convert(58)}, ${convert(126)}, ${convert(55)}) }
-            expect(${convert(23)}) { maxOf(${p.randomNextUntil(23)}, ${convert(23)}, ${p.randomNextUntil(23)}) }
-            expect($type.MIN_VALUE) { maxOf($type.MIN_VALUE, $type.MIN_VALUE, $type.MIN_VALUE) }
+            expect(${toP(3)}) { $maxOf(${toP(2)}, ${toP(1)}, ${toP(3)}) }
+            expect(${toP(126)}) { $maxOf(${toP(58)}, ${toP(126)}, ${toP(55)}) }
+            expect(${toP(23)}) { $maxOf(${p.randomNextUntil(23)}, ${toP(23)}, ${p.randomNextUntil(23)}) }
+            expect(MIN_VALUE) { $maxOf(MIN_VALUE, MIN_VALUE, MIN_VALUE) }
             """
         }
         if (p.isFloatingPoint()) {
             bodyAppend {
                 val f = if (p == PrimitiveType.Float) "f" else ""
                 """
-                expect($type.MAX_VALUE) { maxOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}) }
-                assertEquals(0.0$f, maxOf(0.0$f, -0.0$f, -0.0$f))
-                assertEquals(0.0$f, maxOf(-0.0$f, 0.0$f, 0.0$f))
-                assertEquals($type.POSITIVE_INFINITY, maxOf($type.POSITIVE_INFINITY, $type.MAX_VALUE, $type.MIN_VALUE))
+                expect(MAX_VALUE) { $maxOf(MIN_VALUE, MAX_VALUE, ${toP(0)}) }
+                assertEquals(ZERO, $maxOf(ZERO, -ZERO, -ZERO))
+                assertEquals(ZERO, $maxOf(-ZERO, ZERO, ZERO))
+                assertEquals(POSITIVE_INFINITY, $maxOf(POSITIVE_INFINITY, MAX_VALUE, MIN_VALUE))
                 """
             }
         } else {
             bodyAppend {
                 """
-                expect($type.MAX_VALUE) { maxOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}) }
+                expect(MAX_VALUE) { $maxOf(MIN_VALUE, MAX_VALUE, ${toP(0)}) }
                 """
             }
         }
     }
 
     val f_maxOf_vararg = test("maxOf_vararg()") {
-        //        include(Generic)
+        include(Generic)
         include(Primitives, PrimitiveType.numericPrimitives)
         include(Unsigned)
     } builder {
         sourceFile(f.sourceFileComparisons)
 
-        val p = primitive!!
-        val type = p.name
-
+        val p = primitive ?: PrimitiveType.Int
+        val maxOf = if (f == Generic) "maxOf<${p.name}>" else "maxOf"
         body {
             """
-            expect(${convert(10)}) { maxOf(${convert(2)}, ${convert(1)}, ${convert(3)}, ${convert(10)}) }
-            expect(${convert(126)}) { maxOf(${convert(58)}, ${convert(126)}, ${convert(55)}, ${convert(87)}) }
-            expect(${convert(23)}) { maxOf(${p.randomNextUntil(23)}, ${convert(23)}, ${p.randomNextUntil(23)}, ${convert(21)}) }
-            expect($type.MIN_VALUE) { maxOf($type.MIN_VALUE, $type.MIN_VALUE, $type.MIN_VALUE, $type.MIN_VALUE) }
+            expect(${toP(10)}) { $maxOf(${toP(2)}, ${toP(1)}, ${toP(3)}, ${toP(10)}) }
+            expect(${toP(126)}) { $maxOf(${toP(58)}, ${toP(126)}, ${toP(55)}, ${toP(87)}) }
+            expect(${toP(23)}) { $maxOf(${p.randomNextUntil(23)}, ${toP(23)}, ${p.randomNextUntil(23)}, ${toP(21)}) }
+            expect(MIN_VALUE) { $maxOf(MIN_VALUE, MIN_VALUE, MIN_VALUE, MIN_VALUE) }
             """
         }
         if (p.isFloatingPoint()) {
             bodyAppend {
                 val f = if (p == PrimitiveType.Float) "f" else ""
                 """
-                expect($type.MAX_VALUE) { maxOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}, ${convert(1)}) }
-                assertEquals(0.0$f, maxOf(0.0$f, -0.0$f, -0.0$f, 0.0$f))
-                assertEquals(0.0$f, maxOf(-0.0$f, 0.0$f, 0.0$f, -0.0$f))
-                assertEquals($type.POSITIVE_INFINITY, maxOf($type.POSITIVE_INFINITY, $type.NEGATIVE_INFINITY, $type.MAX_VALUE, $type.MIN_VALUE))
+                expect(MAX_VALUE) { $maxOf(MIN_VALUE, MAX_VALUE, ${toP(0)}, ${toP(1)}) }
+                assertEquals(ZERO, $maxOf(ZERO, -ZERO, -ZERO, ZERO))
+                assertEquals(ZERO, $maxOf(-ZERO, ZERO, ZERO, -ZERO))
+                assertEquals(POSITIVE_INFINITY, $maxOf(POSITIVE_INFINITY, NEGATIVE_INFINITY, MAX_VALUE, MIN_VALUE))
                 """
             }
         } else {
             bodyAppend {
                 """
-                expect($type.MAX_VALUE) { maxOf($type.MIN_VALUE, $type.MAX_VALUE, ${convert(0)}, ${convert(1)}) }
+                expect(MAX_VALUE) { $maxOf(MIN_VALUE, MAX_VALUE, ${toP(0)}, ${toP(1)}) }
                 """
             }
         }

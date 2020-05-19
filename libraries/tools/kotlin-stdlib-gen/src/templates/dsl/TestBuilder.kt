@@ -6,7 +6,9 @@
 package templates
 
 import templates.Family.*
+import templates.Family.Collections
 import java.lang.IllegalArgumentException
+import java.util.*
 
 private fun getDefaultSourceFile(f: Family): TestSourceFile = when (f) {
     Iterables, Collections, Lists -> TestSourceFile.Collections
@@ -74,40 +76,45 @@ class TestBuilder(
             action()
     }
 
-    fun body(valueBuilder: TestExtensions.() -> String) {
-        body = valueBuilder(testExtensions)
+    fun body(valueBuilder: TestExtension.() -> String) {
+        body = valueBuilder(test)
     }
-    fun body(f: Family, valueBuilder: TestExtensions.() -> String) {
+    fun body(f: Family, valueBuilder: TestExtension.() -> String) {
         if (family == f) {
             body(valueBuilder)
         }
     }
-    fun body(f: Family, p: PrimitiveType, valueBuilder: TestExtensions.() -> String) {
+    fun body(f: Family, p: PrimitiveType, valueBuilder: TestExtension.() -> String) {
         if (family == f && primitive == p) {
             body(valueBuilder)
         }
     }
-    fun body(vararg families: Family, valueBuilder: TestExtensions.() -> String) {
+    fun body(vararg families: Family, valueBuilder: TestExtension.() -> String) {
         if (family in families) {
             body(valueBuilder)
         }
     }
 
 
-    fun bodyAppend(valueBuilder: TestExtensions.() -> String) {
-        body += valueBuilder(testExtensions)
+    fun bodyAppend(valueBuilder: TestExtension.() -> String) {
+        body += "\n" + valueBuilder(test)
     }
-    fun bodyAppend(f: Family, valueBuilder: TestExtensions.() -> String) {
+    fun bodyAppend(f: Family, valueBuilder: TestExtension.() -> String) {
         if (family == f) {
             bodyAppend(valueBuilder)
         }
     }
-    fun bodyAppend(f: Family, p: PrimitiveType, valueBuilder: TestExtensions.() -> String) {
+    fun bodyAppend(f: Family, p: PrimitiveType, valueBuilder: TestExtension.() -> String) {
         if (family == f && primitive == p) {
             bodyAppend(valueBuilder)
         }
     }
-    fun bodyAppend(vararg families: Family, valueBuilder: TestExtensions.() -> String) {
+    fun bodyAppend(f: Family, predicate: (PrimitiveType) -> Boolean, valueBuilder: TestExtension.() -> String) {
+        if (family == f && predicate(primitive!!)) {
+            bodyAppend(valueBuilder)
+        }
+    }
+    fun bodyAppend(vararg families: Family, valueBuilder: TestExtension.() -> String) {
         if (family in families) {
             bodyAppend(valueBuilder)
         }
@@ -140,8 +147,9 @@ class TestBuilder(
         builder.appendIndented("@Test\n")
 
         val testNameSuffix = when (f) {
-            ArraysOfPrimitives, ArraysOfUnsigned, ArraysOfObjects, InvariantArraysOfObjects -> (primitive?.name ?: "") + "Array"
+            ArraysOfPrimitives, ArraysOfUnsigned, ArraysOfObjects -> (primitive?.name ?: "") + "Array"
             Primitives, Unsigned -> primitive!!.name
+            InvariantArraysOfObjects -> throw IllegalArgumentException("$name test: invariant arrays are not supported yet")
             else -> f.name.let { if (it.last() == 's') it.dropLast(1) else it }
         }
 
@@ -157,7 +165,7 @@ class TestBuilder(
         builder.append('\n')
         body.lineSequence().forEach {
             var count = indent
-            val line = it.dropWhile { count-- > 0 && it == ' ' }//.renderType()
+            val line = it.dropWhile { count-- > 0 && it == ' ' }.replaceKeywords()
             if (line.isNotEmpty()) {
                 builder.appendIndented("    ").append(line).append("\n")
             }
@@ -166,27 +174,75 @@ class TestBuilder(
         builder.appendIndented("}\n\n")
     }
 
-    private val testExtensions = TestExtensions()
+    private fun String.replaceKeywords(): String {
+        val t = StringTokenizer(this, " \t\n,:()<>?.", true)
+        val answer = StringBuilder()
 
-    inner class TestExtensions {
-        fun collectionOf(vararg values: Int): String {
-            return when (family) {
-                ArraysOfPrimitives, ArraysOfUnsigned -> "${primitive!!.name.toLowerCase()}ArrayOf(${values.joinToString { literal(it) }})"
-                ArraysOfObjects -> "arrayOf<Int>(${values.joinToString()})"
-                Iterables, Lists -> "listOf<Int>(${values.joinToString()})"
-                Sequences -> "sequenceOf<Int>(${values.joinToString()})"
-                else -> throw IllegalArgumentException(family.toString())
-            }
+        while (t.hasMoreTokens()) {
+            val token = t.nextToken()
+            answer.append(
+                when (token) {
+                    "PRIMITIVE" -> primitive?.name ?: token
+                    "ZERO" -> test.literal(0)
+                    "-ZERO" -> "-" + test.literal(0)
+                    "ONE" -> test.literal(1)
+                    "-ONE" -> test.literal(-1)
+                    "TWO" -> test.literal(2)
+                    "THREE" -> test.literal(3)
+                    "MAX_VALUE" -> test.P + ".MAX_VALUE"
+                    "MIN_VALUE" -> test.P + ".MIN_VALUE"
+                    "-MAX_VALUE" -> "-" + test.P + ".MAX_VALUE"
+                    "-MIN_VALUE" -> "-" + test.P + ".MIN_VALUE"
+                    "POSITIVE_INFINITY" -> test.P + ".POSITIVE_INFINITY"
+                    "NEGATIVE_INFINITY" -> test.P + ".NEGATIVE_INFINITY"
+                    else -> token
+                }
+            )
         }
 
-        val collectionOf: String
-            get() = when (family) {
+        return answer.toString()
+    }
+
+    val test = TestExtension()
+
+    inner class TestExtension {
+        fun Family.of(vararg values: Int): String = when (this) {
+            ArraysOfPrimitives, ArraysOfUnsigned -> "$of(${values.joinToString { literal(it) }})"
+            else -> "$of<$P>(${values.joinToString { literal(it) }})"
+        }
+
+        fun of(vararg values: Int): String = family.of(*values)
+
+        val Family.of: String
+            get() = when (this) {
                 ArraysOfPrimitives, ArraysOfUnsigned -> "${primitive!!.name.toLowerCase()}ArrayOf"
                 ArraysOfObjects -> "arrayOf"
                 Iterables, Lists -> "listOf"
                 Sequences -> "sequenceOf"
-                else -> throw IllegalArgumentException(family.toString())
+                else -> throw IllegalArgumentException(this.toString())
             }
+
+        val of: String
+            get() = family.of
+
+        val mutableOf: String
+            get() = when (family) {
+                Lists, Iterables -> "mutableListOf"
+                ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned -> of
+                else -> throw IllegalArgumentException(this.toString())
+            }
+
+        val P: String
+            get() = primitive?.name ?: "Int"
+
+        val Family.assertEquals: String
+            get() = when (this) {
+                ArraysOfPrimitives, ArraysOfUnsigned, ArraysOfObjects -> "assertArrayContentEquals"
+                else -> "assertEquals"
+            }
+
+        val assertEquals: String
+            get() = family.assertEquals
 
         fun literal(value: Int): String {
             return when (primitive) {
@@ -200,15 +256,18 @@ class TestBuilder(
             }
         }
 
-        fun convert(value: Int): String {
+        fun toP(value: Int): String {
             return when (primitive) {
-                PrimitiveType.Byte, PrimitiveType.Short, PrimitiveType.UByte, PrimitiveType.UShort -> "$value.to${primitive!!.name}()"
+                PrimitiveType.Byte, PrimitiveType.Short, PrimitiveType.UByte, PrimitiveType.UShort -> "$value.to$P()"
                 else -> literal(value)
             }
         }
 
-        fun interpolate(value: Int): String {
-            return "${"$"}{${literal(value)}}"
+        fun toString(value: Int): String {
+            return when (primitive) {
+                PrimitiveType.Float, PrimitiveType.Double -> "$value.0"
+                else -> "$value"
+            }
         }
 
 
@@ -235,25 +294,25 @@ class TestBuilder(
             if (this == PrimitiveType.Boolean)
                 throw IllegalArgumentException(this.toString())
             else if (name.endsWith("Int") || name.endsWith("Long"))
-                randomNext(range = "${literal(from)}..$name.MAX_VALUE")
+                randomNext(range = "${literal(from)}..MAX_VALUE")
             else if (this == PrimitiveType.Double)
-                randomNext(range = "$from.0, $name.MAX_VALUE")
+                randomNext(range = "$from.0, MAX_VALUE")
             else if (this == PrimitiveType.Float)
-                randomNext(range = "$from.0, $name.MAX_VALUE.toDouble()")
+                randomNext(range = "$from.0, MAX_VALUE.toDouble()")
             else
-                randomNext(range = "$from..$name.MAX_VALUE.toInt()")
+                randomNext(range = "$from..MAX_VALUE.toInt()")
 
         fun PrimitiveType.randomNextUntil(until: Int): String =
             if (this == PrimitiveType.Boolean)
                 throw IllegalArgumentException(this.toString())
             else if (name.endsWith("Int") || name.endsWith("Long"))
-                randomNext(range = "$name.MIN_VALUE, ${literal(until)}")
+                randomNext(range = "MIN_VALUE, ${literal(until)}")
             else if (this == PrimitiveType.Double)
-                randomNext(range = "$name.MIN_VALUE, $until.0")
+                randomNext(range = "MIN_VALUE, $until.0")
             else if (this == PrimitiveType.Float)
-                randomNext(range = "$name.MIN_VALUE.toDouble(), $until.0")
+                randomNext(range = "MIN_VALUE.toDouble(), $until.0")
             else
-                randomNext(range = "$name.MIN_VALUE.toInt(), $until")
+                randomNext(range = "MIN_VALUE.toInt(), $until")
 
         private fun PrimitiveType.randomNext(range: String): String =
             "Random." + if (name.endsWith("Int") || name.endsWith("Long") || this == PrimitiveType.Double)
@@ -266,5 +325,11 @@ class TestBuilder(
             else
                 "nextInt($range).to$name()"
     }
+}
+
+
+fun Family.isArray(): Boolean = when (this) {
+    ArraysOfObjects, InvariantArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned -> true
+    else -> false
 }
 

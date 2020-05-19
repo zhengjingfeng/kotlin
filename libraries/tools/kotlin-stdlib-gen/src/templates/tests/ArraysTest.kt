@@ -14,42 +14,42 @@ import templates.test
 object ArraysTest : TestTemplateGroupBase() {
 
     val f_copyInto = test("copyInto()") {
-        include(/*InvariantArraysOfObjects, */ArraysOfPrimitives, ArraysOfUnsigned)
+        include(ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned)
         exclude(PrimitiveType.Boolean)
     } builder {
         body {
             """
-            val dest = ${collectionOf(1, 2, 3)}
-            val newValues = ${collectionOf(4, 5, 6)}
+            val dest = ${of(1, 2, 3)}
+            val newValues = ${of(4, 5, 6)}
             
             newValues.copyInto(dest, 0, 1, 3)
-            val result1 = ${collectionOf(5, 6, 3)}
+            val result1 = ${of(5, 6, 3)}
             assertTrue(result1 contentEquals dest, "Copying from newValues: ${"$"}{result1.contentToString()}, ${"$"}{dest.contentToString()}")
 
             dest.copyInto(dest, 0, 1, 3)
-            val result2 = ${collectionOf(6, 3, 3)}
+            val result2 = ${of(6, 3, 3)}
             assertTrue(result2 contentEquals dest, "Overlapping backward copy: ${"$"}{result2.contentToString()}, ${"$"}{dest.contentToString()}")
 
             dest.copyInto(dest, 1, 0, 2)
-            val result3 = ${collectionOf(6, 6, 3)}
+            val result3 = ${of(6, 6, 3)}
             assertTrue(result3 contentEquals dest, "Overlapping forward copy: ${"$"}{result2.contentToString()}, ${"$"}{dest.contentToString()}")
             """
         }
         body(ArraysOfPrimitives, PrimitiveType.Char) {
             """
-            val dest = arrayOf('a', 'b', 'c')
-            val newValues = arrayOf('e', 'f', 'g')
+            val dest = $of('a', 'b', 'c')
+            val newValues = $of('e', 'f', 'g')
             newValues.copyInto(dest, 0, 1, 3)
             
-            val result1 = arrayOf('f', 'g', 'c')
+            val result1 = $of('f', 'g', 'c')
             assertTrue(result1 contentEquals dest, "Copying from newValues: ${"$"}{result1.contentToString()}, ${"$"}{dest.contentToString()}")
 
             dest.copyInto(dest, 0, 1, 3)
-            val result2 = arrayOf('g', 'c', 'c')
+            val result2 = $of('g', 'c', 'c')
             assertTrue(result2 contentEquals dest, "Overlapping backward copy: ${"$"}{result2.contentToString()}, ${"$"}{dest.contentToString()}")
 
             dest.copyInto(dest, 1, 0, 2)
-            val result3 = arrayOf('g', 'g', 'c')
+            val result3 = $of('g', 'g', 'c')
             assertTrue(result3 contentEquals dest, "Overlapping forward copy: ${"$"}{result2.contentToString()}, ${"$"}{dest.contentToString()}") 
             """
         }

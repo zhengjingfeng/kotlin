@@ -15,6 +15,15 @@ import kotlin.test.*
 
 class _ComparisonsTest {
     @Test
+    fun maxOf_2_Generic() {
+        expect(2) { maxOf<Int>(2, 1) }
+        expect(126) { maxOf<Int>(58, 126) }
+        expect(23) { maxOf<Int>(Random.nextInt(Int.MIN_VALUE, 23), 23) }
+        expect(Int.MAX_VALUE) { maxOf<Int>(Int.MIN_VALUE, Int.MAX_VALUE) }
+        expect(Int.MIN_VALUE) { maxOf<Int>(Int.MIN_VALUE, Int.MIN_VALUE) }
+    }
+
+    @Test
     fun maxOf_2_Int() {
         expect(2) { maxOf(2, 1) }
         expect(126) { maxOf(58, 126) }
@@ -73,6 +82,16 @@ class _ComparisonsTest {
             assertEquals(0.0f, maxOf(0.0f, -0.0f))
             assertEquals(0.0f, maxOf(-0.0f, 0.0f))
             assertEquals(Float.POSITIVE_INFINITY, maxOf(Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY))
+            
+    }
+
+    @Test
+    fun maxOf_3_Generic() {
+        expect(3) { maxOf<Int>(2, 1, 3) }
+        expect(126) { maxOf<Int>(58, 126, 55) }
+        expect(23) { maxOf<Int>(Random.nextInt(Int.MIN_VALUE, 23), 23, Random.nextInt(Int.MIN_VALUE, 23)) }
+        expect(Int.MIN_VALUE) { maxOf<Int>(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE) }
+            expect(Int.MAX_VALUE) { maxOf<Int>(Int.MIN_VALUE, Int.MAX_VALUE, 0) }
             
     }
 
@@ -143,6 +162,16 @@ class _ComparisonsTest {
     }
 
     @Test
+    fun maxOf_vararg_Generic() {
+        expect(10) { maxOf<Int>(2, 1, 3, 10) }
+        expect(126) { maxOf<Int>(58, 126, 55, 87) }
+        expect(23) { maxOf<Int>(Random.nextInt(Int.MIN_VALUE, 23), 23, Random.nextInt(Int.MIN_VALUE, 23), 21) }
+        expect(Int.MIN_VALUE) { maxOf<Int>(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE) }
+            expect(Int.MAX_VALUE) { maxOf<Int>(Int.MIN_VALUE, Int.MAX_VALUE, 0, 1) }
+            
+    }
+
+    @Test
     fun maxOf_vararg_Int() {
         expect(10) { maxOf(2, 1, 3, 10) }
         expect(126) { maxOf(58, 126, 55, 87) }
@@ -209,6 +238,15 @@ class _ComparisonsTest {
     }
 
     @Test
+    fun minOf_2_Generic() {
+        expect(1) { minOf<Int>(2, 1) }
+        expect(58) { minOf<Int>(58, 126) }
+        expect(23) { minOf<Int>(Random.nextInt(23..Int.MAX_VALUE), 23) }
+        expect(Int.MIN_VALUE) { minOf<Int>(Int.MIN_VALUE, Int.MAX_VALUE) }
+        expect(Int.MAX_VALUE) { minOf<Int>(Int.MAX_VALUE, Int.MAX_VALUE) }
+    }
+
+    @Test
     fun minOf_2_Int() {
         expect(1) { minOf(2, 1) }
         expect(58) { minOf(58, 126) }
@@ -271,6 +309,16 @@ class _ComparisonsTest {
     }
 
     @Test
+    fun minOf_3_Generic() {
+        expect(1) { minOf<Int>(2, 1, 3) }
+        expect(55) { minOf<Int>(58, 126, 55) }
+        expect(23) { minOf<Int>(Random.nextInt(23..Int.MAX_VALUE), 23, Random.nextInt(23..Int.MAX_VALUE)) }
+        expect(Int.MAX_VALUE) { minOf<Int>(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE) }
+            expect(Int.MIN_VALUE) { minOf<Int>(Int.MIN_VALUE, Int.MAX_VALUE, 0) }
+            
+    }
+
+    @Test
     fun minOf_3_Int() {
         expect(1) { minOf(2, 1, 3) }
         expect(55) { minOf(58, 126, 55) }
@@ -296,7 +344,7 @@ class _ComparisonsTest {
         expect(55.toByte()) { minOf(58.toByte(), 126.toByte(), 55.toByte()) }
         expect(23.toByte()) { minOf(Random.nextInt(23..Byte.MAX_VALUE.toInt()).toByte(), 23.toByte(), Random.nextInt(23..Byte.MAX_VALUE.toInt()).toByte()) }
         expect(Byte.MAX_VALUE) { minOf(Byte.MAX_VALUE, Byte.MAX_VALUE, Byte.MAX_VALUE) }
-            expect(Byte.MIN_VALUE) { minOf(Byte.MIN_VALUE, Byte.MAX_VALUE, 0.toByte()) }
+            expect(Byte.MIN_VALUE) { minOf(Byte.MIN_VALUE, Byte.MAX_VALUE, 0) }
             
     }
 
@@ -306,7 +354,7 @@ class _ComparisonsTest {
         expect(55.toShort()) { minOf(58.toShort(), 126.toShort(), 55.toShort()) }
         expect(23.toShort()) { minOf(Random.nextInt(23..Short.MAX_VALUE.toInt()).toShort(), 23.toShort(), Random.nextInt(23..Short.MAX_VALUE.toInt()).toShort()) }
         expect(Short.MAX_VALUE) { minOf(Short.MAX_VALUE, Short.MAX_VALUE, Short.MAX_VALUE) }
-            expect(Short.MIN_VALUE) { minOf(Short.MIN_VALUE, Short.MAX_VALUE, 0.toShort()) }
+            expect(Short.MIN_VALUE) { minOf(Short.MIN_VALUE, Short.MAX_VALUE, 0) }
             
     }
 
@@ -337,12 +385,22 @@ class _ComparisonsTest {
     }
 
     @Test
+    fun minOf_vararg_Generic() {
+        expect(1) { minOf<Int>(2, 1, 3, 10) }
+        expect(55) { minOf<Int>(58, 126, 55, 87) }
+        expect(21) { minOf<Int>(Random.nextInt(23..Int.MAX_VALUE), 23, Random.nextInt(23..Int.MAX_VALUE), 21) }
+        expect(Int.MAX_VALUE) { minOf<Int>(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE) }
+            assertEquals(Int.MIN_VALUE, minOf<Int>(Int.MIN_VALUE, Int.MAX_VALUE, 0, 1))
+            
+    }
+
+    @Test
     fun minOf_vararg_Int() {
         expect(1) { minOf(2, 1, 3, 10) }
         expect(55) { minOf(58, 126, 55, 87) }
         expect(21) { minOf(Random.nextInt(23..Int.MAX_VALUE), 23, Random.nextInt(23..Int.MAX_VALUE), 21) }
         expect(Int.MAX_VALUE) { minOf(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE) }
-            expect(Int.MIN_VALUE) { minOf(Int.MIN_VALUE, Int.MAX_VALUE, 0, 1) }
+            assertEquals(Int.MIN_VALUE, minOf(Int.MIN_VALUE, Int.MAX_VALUE, 0, 1))
             
     }
 
@@ -352,7 +410,7 @@ class _ComparisonsTest {
         expect(55L) { minOf(58L, 126L, 55L, 87L) }
         expect(21L) { minOf(Random.nextLong(23L..Long.MAX_VALUE), 23L, Random.nextLong(23L..Long.MAX_VALUE), 21L) }
         expect(Long.MAX_VALUE) { minOf(Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE) }
-            expect(Long.MIN_VALUE) { minOf(Long.MIN_VALUE, Long.MAX_VALUE, 0L, 1L) }
+            assertEquals(Long.MIN_VALUE, minOf(Long.MIN_VALUE, Long.MAX_VALUE, 0L, 1L))
             
     }
 
@@ -362,7 +420,7 @@ class _ComparisonsTest {
         expect(55.toByte()) { minOf(58.toByte(), 126.toByte(), 55.toByte(), 87.toByte()) }
         expect(21.toByte()) { minOf(Random.nextInt(23..Byte.MAX_VALUE.toInt()).toByte(), 23.toByte(), Random.nextInt(23..Byte.MAX_VALUE.toInt()).toByte(), 21.toByte()) }
         expect(Byte.MAX_VALUE) { minOf(Byte.MAX_VALUE, Byte.MAX_VALUE, Byte.MAX_VALUE, Byte.MAX_VALUE) }
-            expect(Byte.MIN_VALUE) { minOf(Byte.MIN_VALUE, Byte.MAX_VALUE, 0.toByte(), 1.toByte()) }
+            assertEquals(Byte.MIN_VALUE, minOf(Byte.MIN_VALUE, Byte.MAX_VALUE, 0.toByte(), 1.toByte()))
             
     }
 
@@ -372,7 +430,7 @@ class _ComparisonsTest {
         expect(55.toShort()) { minOf(58.toShort(), 126.toShort(), 55.toShort(), 87.toShort()) }
         expect(21.toShort()) { minOf(Random.nextInt(23..Short.MAX_VALUE.toInt()).toShort(), 23.toShort(), Random.nextInt(23..Short.MAX_VALUE.toInt()).toShort(), 21.toShort()) }
         expect(Short.MAX_VALUE) { minOf(Short.MAX_VALUE, Short.MAX_VALUE, Short.MAX_VALUE, Short.MAX_VALUE) }
-            expect(Short.MIN_VALUE) { minOf(Short.MIN_VALUE, Short.MAX_VALUE, 0.toShort(), 1.toShort()) }
+            assertEquals(Short.MIN_VALUE, minOf(Short.MIN_VALUE, Short.MAX_VALUE, 0.toShort(), 1.toShort()))
             
     }
 
@@ -382,7 +440,7 @@ class _ComparisonsTest {
         expect(55.0) { minOf(58.0, 126.0, 55.0, 87.0) }
         expect(21.0) { minOf(Random.nextDouble(23.0, Double.MAX_VALUE), 23.0, Random.nextDouble(23.0, Double.MAX_VALUE), 21.0) }
         expect(Double.MAX_VALUE) { minOf(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE) }
-            expect(0.0) { minOf(Double.MIN_VALUE, Double.MAX_VALUE, 0.0, 1.0) }
+            assertEquals(0.0, minOf(Double.MIN_VALUE, Double.MAX_VALUE, 0.0, 1.0))
             assertEquals(-0.0, minOf(0.0, -0.0, -0.0, 0.0))
             assertEquals(-0.0, minOf(-0.0, 0.0, 0.0, -0.0))
             assertEquals(Double.NEGATIVE_INFINITY, minOf(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.MAX_VALUE, Double.MIN_VALUE))
@@ -395,7 +453,7 @@ class _ComparisonsTest {
         expect(55.0f) { minOf(58.0f, 126.0f, 55.0f, 87.0f) }
         expect(21.0f) { minOf(Random.nextDouble(23.0, Float.MAX_VALUE.toDouble()).toFloat(), 23.0f, Random.nextDouble(23.0, Float.MAX_VALUE.toDouble()).toFloat(), 21.0f) }
         expect(Float.MAX_VALUE) { minOf(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE) }
-            expect(0.0f) { minOf(Float.MIN_VALUE, Float.MAX_VALUE, 0.0f, 1.0f) }
+            assertEquals(0.0f, minOf(Float.MIN_VALUE, Float.MAX_VALUE, 0.0f, 1.0f))
             assertEquals(-0.0f, minOf(0.0f, -0.0f, -0.0f, 0.0f))
             assertEquals(-0.0f, minOf(-0.0f, 0.0f, 0.0f, -0.0f))
             assertEquals(Float.NEGATIVE_INFINITY, minOf(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.MAX_VALUE, Float.MIN_VALUE))

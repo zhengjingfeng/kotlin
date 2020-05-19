@@ -23,7 +23,8 @@ fun main(args: Array<String>) {
         NumbersTest,
         ComparablesTest,
         ElementsTest,
-        ArraysTest
+        ArraysTest,
+        OrderingTest
     )
 
     COPYRIGHT_NOTICE = readCopyrightNoticeFromProfile { Thread.currentThread().contextClassLoader.getResourceAsStream("apache.xml").reader() }

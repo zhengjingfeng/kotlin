@@ -14,14 +14,14 @@ import templates.test
 object ElementsTest : TestTemplateGroupBase() {
 
     val f_indexOf = test("indexOf()") {
-        include(Iterables, Sequences, ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned, Lists)
+        include(Lists, Sequences, ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned)
     } builder {
         body {
             """
-            expect(-1) { ${collectionOf(1, 2, 3)}.indexOf(${literal(0)}) }
-            expect(0) { ${collectionOf(1, 2, 3)}.indexOf(${literal(1)}) }
-            expect(1) { ${collectionOf(1, 2, 3)}.indexOf(${literal(2)}) }
-            expect(2) { ${collectionOf(1, 2, 3)}.indexOf(${literal(3)}) } 
+            expect(-1) { ${of(1, 2, 3)}.indexOf(ZERO) }
+            expect(0) { ${of(1, 2, 3)}.indexOf(ONE) }
+            expect(1) { ${of(1, 2, 3)}.indexOf(TWO) }
+            expect(2) { ${of(1, 2, 3)}.indexOf(THREE) } 
             """
         }
         body(ArraysOfPrimitives, PrimitiveType.Char) {
@@ -41,24 +41,24 @@ object ElementsTest : TestTemplateGroupBase() {
         }
         bodyAppend(Iterables, Sequences, ArraysOfObjects, Lists) {
             """
-            expect(-1) { $collectionOf("cat", "dog", "bird").indexOf("mouse") }
-            expect(0) { $collectionOf("cat", "dog", "bird").indexOf("cat") }
-            expect(1) { $collectionOf("cat", "dog", "bird").indexOf("dog") }
-            expect(2) { $collectionOf("cat", "dog", "bird").indexOf("bird") }
-            expect(0) { $collectionOf(null, "dog", null).indexOf(null as String?)}
+            expect(-1) { $of("cat", "dog", "bird").indexOf("mouse") }
+            expect(0) { $of("cat", "dog", "bird").indexOf("cat") }
+            expect(1) { $of("cat", "dog", "bird").indexOf("dog") }
+            expect(2) { $of("cat", "dog", "bird").indexOf("bird") }
+            expect(0) { $of(null, "dog", null).indexOf(null as String?)}
             """
         }
     }
 
     val f_indexOfFirst = test("indexOfFirst()") {
-        include(Iterables, Sequences, ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned, Lists)
+        include(Lists, Sequences, ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned)
     } builder {
         body {
             """
-            expect(-1) { ${collectionOf(1, 2, 3)}.indexOfFirst { it == ${convert(0)} } }
-            expect(0) { ${collectionOf(1, 2, 3)}.indexOfFirst { it % ${literal(2)} == ${literal(1)} } }
-            expect(1) { ${collectionOf(1, 2, 3)}.indexOfFirst { it % ${literal(2)} == ${literal(0)} } }
-            expect(2) { ${collectionOf(1, 2, 3)}.indexOfFirst { it == ${convert(3)} } }
+            expect(-1) { ${of(1, 2, 3)}.indexOfFirst { it == ${toP(0)} } }
+            expect(0) { ${of(1, 2, 3)}.indexOfFirst { it % TWO == ONE } }
+            expect(1) { ${of(1, 2, 3)}.indexOfFirst { it % TWO == ZERO } }
+            expect(2) { ${of(1, 2, 3)}.indexOfFirst { it == ${toP(3)} } }
             """
         }
         body(ArraysOfPrimitives, PrimitiveType.Char) {
@@ -78,10 +78,10 @@ object ElementsTest : TestTemplateGroupBase() {
         }
         bodyAppend(Iterables, Sequences, ArraysOfObjects, Lists) {
             """
-            expect(-1) { $collectionOf("cat", "dog", "bird").indexOfFirst { it.contains("p") } }
-            expect(0) { $collectionOf("cat", "dog", "bird").indexOfFirst { it.startsWith('c') } }
-            expect(1) { $collectionOf("cat", "dog", "bird").indexOfFirst { it.startsWith('d') } }
-            expect(2) { $collectionOf("cat", "dog", "bird").indexOfFirst { it.endsWith('d') } }
+            expect(-1) { $of("cat", "dog", "bird").indexOfFirst { it.contains("p") } }
+            expect(0) { $of("cat", "dog", "bird").indexOfFirst { it.startsWith('c') } }
+            expect(1) { $of("cat", "dog", "bird").indexOfFirst { it.startsWith('d') } }
+            expect(2) { $of("cat", "dog", "bird").indexOfFirst { it.endsWith('d') } }
             """
         }
     }
