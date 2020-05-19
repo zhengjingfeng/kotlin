@@ -22,23 +22,18 @@ class KotlinCodeVisionProvider : InlayHintsProvider<KotlinCodeVisionProvider.Kot
     var usagesLimit: Int = 100
     var inheritorsLimit: Int = 100
 
-    override fun isLanguageSupported(language: Language): Boolean {
-        return language is KotlinLanguage
-    }
+    override fun isLanguageSupported(language: Language): Boolean = language is KotlinLanguage
 
     override fun createConfigurable(settings: KotlinCodeVisionSettings): ImmediateConfigurable = createImmediateConfigurable(settings)
 
-    override fun createSettings(): KotlinCodeVisionSettings {
-        return KotlinCodeVisionSettings()
-    }
+    override fun createSettings(): KotlinCodeVisionSettings = KotlinCodeVisionSettings()
 
     override fun getCollectorFor(
         file: PsiFile, editor: Editor, settings: KotlinCodeVisionSettings, sink: InlayHintsSink
     ): InlayHintsCollector? {
-
+        if (!settings.showUsages && !settings.showInheritors) return null
         return KotlinCodeVisionHintsCollector(editor, settings.showUsages, settings.showInheritors, usagesLimit, inheritorsLimit)
     }
-
 
     data class KotlinCodeVisionSettings(var showUsages: Boolean = false, var showInheritors: Boolean = false)
 }
