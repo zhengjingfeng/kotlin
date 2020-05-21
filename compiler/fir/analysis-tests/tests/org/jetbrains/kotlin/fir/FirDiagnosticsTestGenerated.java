@@ -1669,11 +1669,6 @@ public class FirDiagnosticsTestGenerated extends AbstractFirDiagnosticsTest {
             runTest("compiler/fir/analysis-tests/testData/resolve/problems/javaAccessorConversion.kt");
         }
 
-        @TestMetadata("javaArrayInGeneric.kt")
-        public void testJavaArrayInGeneric() throws Exception {
-            runTest("compiler/fir/analysis-tests/testData/resolve/problems/javaArrayInGeneric.kt");
-        }
-
         @TestMetadata("javaQualifier.kt")
         public void testJavaQualifier() throws Exception {
             runTest("compiler/fir/analysis-tests/testData/resolve/problems/javaQualifier.kt");
