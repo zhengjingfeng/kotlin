@@ -16,8 +16,8 @@ FILE: typesFromSuperClasses.kt
                 super<R|Outer|>()
             }
 
-            public[local] final fun foo(n: R|ERROR CLASS: Symbol not found, for `Nested`|): R|kotlin/Unit| {
-                R|<local>/n|.<Unresolved name: bar>#()
+            public[local] final fun foo(n: R|Outer.Nested|): R|kotlin/Unit| {
+                R|<local>/n|.R|/Outer.Nested.bar|()
             }
 
         }
