@@ -476,7 +476,7 @@ class Fir2IrDeclarationStorage(
             result
         }.bindAndDeclareParameters(function, descriptor, irParent, thisReceiverOwner, isStatic = simpleFunction?.isStatic == true)
 
-        leaveScope(created.descriptor)
+        leaveScope(created.wrappedDescriptor)
         if (visibility == Visibilities.LOCAL) {
             localStorage.putLocalFunction(function, created)
             return created
@@ -501,7 +501,7 @@ class Fir2IrDeclarationStorage(
         irParent: IrClass
     ): IrAnonymousInitializer {
         return anonymousInitializer.convertWithOffsets { startOffset, endOffset ->
-            symbolTable.declareAnonymousInitializer(startOffset, endOffset, IrDeclarationOrigin.DEFINED, irParent.descriptor).apply {
+            symbolTable.declareAnonymousInitializer(startOffset, endOffset, IrDeclarationOrigin.DEFINED, irParent.wrappedDescriptor).apply {
                 this.parent = irParent
                 initializerCache[anonymousInitializer] = this
             }
@@ -549,7 +549,7 @@ class Fir2IrDeclarationStorage(
         startOffset: Int,
         endOffset: Int
     ): IrSimpleFunction {
-        val propertyDescriptor = correspondingProperty.descriptor
+        val propertyDescriptor = correspondingProperty.wrappedDescriptor
         val descriptor = when {
             propertyDescriptor is WrappedPropertyDescriptorWithContainerSource ->
                 WrappedFunctionDescriptorWithContainerSource(propertyDescriptor.containerSource)
@@ -857,26 +857,26 @@ class Fir2IrDeclarationStorage(
 
     fun getIrConstructorSymbol(firConstructorSymbol: FirConstructorSymbol): IrConstructorSymbol {
         val firConstructor = firConstructorSymbol.fir
-        getCachedIrConstructor(firConstructor)?.let { return symbolTable.referenceConstructor(it.descriptor) }
+        getCachedIrConstructor(firConstructor)?.let { return symbolTable.referenceConstructor(it.wrappedDescriptor) }
 
         val irParent = findIrParent(firConstructor) as IrClass
         val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
         val irDeclaration = createIrConstructor(firConstructor, irParent, origin = parentOrigin).apply {
             setAndModifyParent(irParent)
         }
-        return symbolTable.referenceConstructor(irDeclaration.descriptor)
+        return symbolTable.referenceConstructor(irDeclaration.wrappedDescriptor)
     }
 
     fun getIrFunctionSymbol(firFunctionSymbol: FirFunctionSymbol<*>): IrFunctionSymbol {
         return when (val firDeclaration = firFunctionSymbol.fir) {
             is FirSimpleFunction, is FirAnonymousFunction -> {
-                getCachedIrFunction(firDeclaration)?.let { return symbolTable.referenceSimpleFunction(it.descriptor) }
+                getCachedIrFunction(firDeclaration)?.let { return symbolTable.referenceSimpleFunction(it.wrappedDescriptor) }
                 val irParent = findIrParent(firDeclaration)
                 val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
                 val irDeclaration = createIrFunction(firDeclaration, irParent, origin = parentOrigin).apply {
                     setAndModifyParent(irParent)
                 }
-                symbolTable.referenceSimpleFunction(irDeclaration.descriptor)
+                symbolTable.referenceSimpleFunction(irDeclaration.wrappedDescriptor)
             }
             is FirConstructor -> {
                 getIrConstructorSymbol(firDeclaration.symbol)
@@ -888,20 +888,20 @@ class Fir2IrDeclarationStorage(
     fun getIrPropertyOrFieldSymbol(firVariableSymbol: FirVariableSymbol<*>): IrSymbol {
         return when (val fir = firVariableSymbol.fir) {
             is FirProperty -> {
-                propertyCache[fir]?.let { return symbolTable.referenceProperty(it.descriptor) }
+                propertyCache[fir]?.let { return symbolTable.referenceProperty(it.wrappedDescriptor) }
                 val irParent = findIrParent(fir)
                 val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
                 val irProperty = createIrProperty(fir, irParent, origin = parentOrigin).apply {
                     setAndModifyParent(irParent)
                 }
-                symbolTable.referenceProperty(irProperty.descriptor)
+                symbolTable.referenceProperty(irProperty.wrappedDescriptor)
             }
             is FirField -> {
-                fieldCache[fir]?.let { return symbolTable.referenceField(it.descriptor) }
+                fieldCache[fir]?.let { return symbolTable.referenceField(it.wrappedDescriptor) }
                 val irField = createIrField(fir).apply {
                     setAndModifyParent(findIrParent(fir))
                 }
-                symbolTable.referenceField(irField.descriptor)
+                symbolTable.referenceField(irField.wrappedDescriptor)
             }
             else -> throw IllegalArgumentException("Unexpected fir in property symbol: ${fir.render()}")
         }
@@ -910,13 +910,13 @@ class Fir2IrDeclarationStorage(
     fun getIrBackingFieldSymbol(firVariableSymbol: FirVariableSymbol<*>): IrSymbol {
         return when (val fir = firVariableSymbol.fir) {
             is FirProperty -> {
-                propertyCache[fir]?.let { return symbolTable.referenceField(it.backingField!!.descriptor) }
+                propertyCache[fir]?.let { return symbolTable.referenceField(it.backingField!!.wrappedDescriptor) }
                 val irParent = findIrParent(fir)
                 val parentOrigin = (irParent as? IrDeclaration)?.origin ?: IrDeclarationOrigin.DEFINED
                 val irProperty = createIrProperty(fir, irParent, origin = parentOrigin).apply {
                     setAndModifyParent(irParent)
                 }
-                symbolTable.referenceField(irProperty.backingField!!.descriptor)
+                symbolTable.referenceField(irProperty.backingField!!.wrappedDescriptor)
             }
             else -> {
                 getIrVariableSymbol(fir)
@@ -927,13 +927,13 @@ class Fir2IrDeclarationStorage(
     private fun getIrVariableSymbol(firVariable: FirVariable<*>): IrVariableSymbol {
         val irDeclaration = localStorage.getVariable(firVariable)
             ?: throw IllegalArgumentException("Cannot find variable ${firVariable.render()} in local storage")
-        return symbolTable.referenceVariable(irDeclaration.descriptor)
+        return symbolTable.referenceVariable(irDeclaration.wrappedDescriptor)
     }
 
     fun getIrValueSymbol(firVariableSymbol: FirVariableSymbol<*>): IrSymbol {
         return when (val firDeclaration = firVariableSymbol.fir) {
             is FirEnumEntry -> {
-                classifierStorage.getCachedIrEnumEntry(firDeclaration)?.let { return symbolTable.referenceEnumEntry(it.descriptor) }
+                classifierStorage.getCachedIrEnumEntry(firDeclaration)?.let { return symbolTable.referenceEnumEntry(it.wrappedDescriptor) }
                 val containingFile = firProvider.getFirCallableContainerFile(firVariableSymbol)
                 val parentClassSymbol = firVariableSymbol.callableId.classId?.let { firSymbolProvider.getClassLikeSymbolByFqName(it) }
                 val irParentClass = (parentClassSymbol?.fir as? FirClass<*>)?.let { classifierStorage.getCachedIrClass(it) }
@@ -943,13 +943,13 @@ class Fir2IrDeclarationStorage(
                     origin = if (containingFile != null) IrDeclarationOrigin.DEFINED else
                         (parentClassSymbol?.fir as? FirClass<*>)?.irOrigin(firProvider) ?: IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB
                 )
-                symbolTable.referenceEnumEntry(irEnumEntry.descriptor)
+                symbolTable.referenceEnumEntry(irEnumEntry.wrappedDescriptor)
             }
             is FirValueParameter -> {
                 val irDeclaration = localStorage.getParameter(firDeclaration)
                 // catch parameter is FirValueParameter in FIR but IrVariable in IR
                     ?: return getIrVariableSymbol(firDeclaration)
-                symbolTable.referenceValueParameter(irDeclaration.descriptor)
+                symbolTable.referenceValueParameter(irDeclaration.wrappedDescriptor)
             }
             else -> {
                 getIrVariableSymbol(firDeclaration)

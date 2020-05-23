@@ -167,7 +167,7 @@ open class SymbolTable(
             if (s == null) {
                 val new = orElse()
                 assert(unboundSymbols.add(new)) {
-                    "Symbol for ${new.descriptor} was already referenced"
+                    "Symbol for ${new.wrappedDescriptor} was already referenced"
                 }
                 set(d1, new)
                 return new
@@ -181,7 +181,7 @@ open class SymbolTable(
                 assert(unboundSymbols.add(new)) {
                     "Symbol for ${new.signature} was already referenced"
                 }
-                set(new.descriptor, new)
+                set(new.wrappedDescriptor, new)
                 new
             }
         }
@@ -322,7 +322,7 @@ open class SymbolTable(
             currentScope = currentScope?.parent
 
             if (currentScope != null && unboundSymbols.isNotEmpty()) {
-                throw AssertionError("Local scope contains unbound symbols: ${unboundSymbols.joinToString { it.descriptor.toString() }}")
+                throw AssertionError("Local scope contains unbound symbols: ${unboundSymbols.joinToString { it.wrappedDescriptor.toString() }}")
             }
         }
 
