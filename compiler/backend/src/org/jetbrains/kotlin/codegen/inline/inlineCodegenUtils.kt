@@ -552,7 +552,7 @@ class InlineOnlySmapSkipper(codegen: BaseExpressionCodegen) {
             // number that is remapped by the SMAP to a line that does not exist.
             val label = Label()
             mv.visitLabel(label)
-            mv.visitLineNumber(smap.mapSyntheticLineNumber(JvmAbi.LOCAL_VARIABLE_INLINE_ARGUMENT_SYNTHETIC_LINE_NUMBER), label)
+            mv.visitLineNumber(smap.mapSyntheticLineNumber(1), label)
         }
     }
 
