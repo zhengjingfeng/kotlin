@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -9,8 +9,8 @@ import com.google.gson.Gson
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.targets.js.npm.GradleNodeModule
 import org.jetbrains.kotlin.gradle.targets.js.npm.NpmProject
-import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.KotlinCompilationNpmResolution
 import org.jetbrains.kotlin.gradle.targets.js.npm.PackageJson
+import org.jetbrains.kotlin.gradle.targets.js.npm.resolved.KotlinCompilationNpmResolution
 import java.io.File
 
 class YarnImportedPackagesVersionResolver(
@@ -78,7 +78,7 @@ class YarnImportedPackagesVersionResolver(
         var doneSomething = false
         map.iterator().forEachRemaining {
             val resolved = resolvedVersion[it.key]
-            if (resolved != null) {
+            if (resolved != null && it.value != resolved) {
                 it.setValue(resolved)
                 doneSomething = true
             }
