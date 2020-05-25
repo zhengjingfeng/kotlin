@@ -30,7 +30,6 @@ import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.*
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.types.impl.IrUninitializedType
 import org.jetbrains.kotlin.resolve.descriptorUtil.isEffectivelyExternal
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.DescriptorWithContainerSource
 
@@ -394,23 +393,6 @@ open class SymbolTable(
         return signaturer.composeSignature(descriptor)?.let { IrClassPublicSymbolImpl(descriptor, it) } ?: IrClassSymbolImpl(descriptor)
     }
 
-    @Deprecated("Used in kotlin-native/BuiltInFictitiousFunctionIrClassFactory")
-    fun declareClass(
-        startOffset: Int, endOffset: Int, origin: IrDeclarationOrigin, descriptor: ClassDescriptor
-    ): IrClass {
-        return classSymbolTable.declare(
-            descriptor,
-            { createClassSymbol(descriptor) },
-            {
-                IrClassImpl(
-                    startOffset, endOffset, origin, it, descriptor,
-                    nameProvider.nameForDeclaration(descriptor),
-                    visibility = descriptor.visibility, modality = descriptor.modality,
-                ).apply { metadata = MetadataSource.Class(it.descriptor) }
-            }
-        )
-    }
-
     fun declareClass(
         descriptor: ClassDescriptor, classFactory: (IrClassSymbol) -> IrClass
     ): IrClass {
@@ -452,33 +434,15 @@ open class SymbolTable(
         )
     }
 
-    @Deprecated("Used in kotlin-native/DescriptorToIrTranslationUtils")
     fun declareConstructor(
-        startOffset: Int, endOffset: Int, origin: IrDeclarationOrigin,
         descriptor: ClassConstructorDescriptor,
+        constructorFactory: (IrConstructorSymbol) -> IrConstructor
     ): IrConstructor =
         constructorSymbolTable.declare(
             descriptor,
             { createConstructorSymbol(descriptor) },
-        ) {
-            IrConstructorImpl(
-                startOffset, endOffset, origin, it,
-                returnType = IrUninitializedType,
-                descriptor,
-                nameProvider.nameForDeclaration(descriptor)
-            ).apply {
-                metadata = MetadataSource.Function(it.descriptor)
-            }
-        }
-
-    fun declareConstructor(
-        descriptor: ClassConstructorDescriptor,
-        constructorFactory: (IrConstructorSymbol) -> IrConstructor
-    ): IrConstructor = constructorSymbolTable.declare(
-        descriptor,
-        { createConstructorSymbol(descriptor) },
-        constructorFactory
-    )
+            constructorFactory
+        )
 
     fun declareConstructorIfNotExists(descriptor: ClassConstructorDescriptor, constructorFactory: (IrConstructorSymbol) -> IrConstructor): IrConstructor =
         constructorSymbolTable.declareIfNotExists(
@@ -735,15 +699,6 @@ open class SymbolTable(
             functionFactory
         )
     }
-
-    @Deprecated("First three arguments aren't needed here", ReplaceWith("declareSimpleFunction(descriptor, functionFactory)"))
-    fun declareSimpleFunction(
-        startOffset: Int,
-        endOffset: Int,
-        origin: IrDeclarationOrigin,
-        descriptor: FunctionDescriptor,
-        functionFactory: (IrSimpleFunctionSymbol) -> IrSimpleFunction
-    ): IrSimpleFunction = declareSimpleFunction(descriptor, functionFactory)
 
     fun declareSimpleFunctionIfNotExists(
         descriptor: FunctionDescriptor,
