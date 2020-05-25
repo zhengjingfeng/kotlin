@@ -38,7 +38,7 @@
         },
         {
           "specVersion": "0.1-401",
-          "casesNumber": 9,
+          "casesNumber": 10,
           "description": "",
           "path": "compiler/tests-spec/testData/diagnostics/linked/overload-resolution/building-the-overload-candidate-set-ocs/call-without-an-explicit-receiver/p-5/neg/6.4.kt",
           "unexpectedBehaviour": true,
