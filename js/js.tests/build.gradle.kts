@@ -17,7 +17,7 @@ node {
 }
 
 val installV8 by tasks.register<NpxTask>("installV8") {
-    //jsvu@1.11.1 v8@8.1.307 --os=default
+    // jsvu@1.11.1 v8@8.1.307 --os=default
     command = "jsvu@1.11.1"
     val engine = "v8"
     val version = "8.1.307"
