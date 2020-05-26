@@ -63,7 +63,19 @@ class SimpleProcessBasedScriptEngine(
             if (sb.endsWith(END)) break
         }
 
-        return sb.removeSuffix(END).toString() as T // TODO
+        if (stderr.available() > 0) {
+            val err = StringBuilder()
+
+            while(vm.isAlive) {
+                val count = stdout.read(buffer)
+                err.append(String(buffer, 0, count))
+                if (count <= 0) break
+            }
+
+            error(err.toString())
+        }
+
+        return sb.removeSuffix(END).toString()
     }
 
     override fun evalVoid(script: String) {
@@ -122,6 +134,7 @@ class SimpleProcessBasedScriptEngine(
             v8   sm  jsc
 load         +    +    +
 print        +    +    +
+printErr     +    +    +
 read         +    +    +
 readline     +    +    +
 readbuffer   +    -    -

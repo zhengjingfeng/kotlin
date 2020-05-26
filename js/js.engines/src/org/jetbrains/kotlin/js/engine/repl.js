@@ -35,7 +35,7 @@
             print(eval(code));
         }
         catch(e) {
-            print(e.stack);
+            printErr(e.stack);
             // print('\nCODE:\n' + code);
         }
 
