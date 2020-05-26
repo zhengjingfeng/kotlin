@@ -14,7 +14,9 @@ import org.junit.Assert
 import java.io.File
 
 fun createScriptEngine(): ScriptEngine {
-    return ScriptEngineNashorn()
+    /// use other engines?
+//    return ScriptEngineNashorn()
+    return SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8-8.1.307"))
 }
 
 fun ScriptEngine.overrideAsserter() {
