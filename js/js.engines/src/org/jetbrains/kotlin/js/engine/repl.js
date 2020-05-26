@@ -6,39 +6,35 @@
 // ~/.jsvu/v8 js/js.engines/src/org/jetbrains/kotlin/js/engine/repl.js
 // TODO create polyfills for node.js. What for?
 
-(function repl() {
-    var { saveState, restoreState } = (function () {
-        let state = null;
-        function saveState() {
-            state = new Map();
-            for (var k in this) {
-                state.set(k, this[k]);
-            }
+var { saveState, restoreState } = (function () {
+    let state = null;
+    function saveState() {
+        state = new Map();
+        for (var k in this) {
+            state.set(k, this[k]);
         }
-        function restoreState() {
-            for (var k in this) {
-                if (state.get(k) !== this[k]) {
-                    this[k] = void 0;
-                }
-            }
-            state = null;
-        }
-
-        return { saveState, restoreState }
-    })()
-    // print('>>> STARTED');
-    // noinspection InfiniteLoopJS
-    while (true) {
-        let code = readline().replace(/\\n/g, '\n');
-
-        try {
-            print(eval(code));
-        }
-        catch(e) {
-            printErr(e.stack);
-            // print('\nCODE:\n' + code);
-        }
-
-        print('<END>');
     }
-})();
+    function restoreState() {
+        for (var k in this) {
+            if (state.get(k) !== this[k]) {
+                this[k] = void 0;
+            }
+        }
+        state = null;
+    }
+
+    return { saveState, restoreState }
+})()
+
+// noinspection InfiniteLoopJS
+while (true) {
+    let code = readline().replace(/\\n/g, '\n');
+
+    try {
+        print(eval(code));
+    } catch(e) {
+        printErr(e.stack);
+        printErr('\nCODE:\n' + code);
+    }
+    print('<END>');
+}
