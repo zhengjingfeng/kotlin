@@ -43,7 +43,7 @@ class ScriptEngineV8(LIBRARY_PATH_BASE: String) : ScriptEngine {
 
     private val myRuntime: V8 = V8.createV8Runtime("global", LIBRARY_PATH_BASE)
 
-    override fun eval(script: String): String = evaluate(script)
+    override fun eval(script: String): String = evaluate<Any?>(script).toString()
 
     @Suppress("UNCHECKED_CAST")
     private fun <T> evaluate(script: String): T {
