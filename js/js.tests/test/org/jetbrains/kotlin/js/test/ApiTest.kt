@@ -12,10 +12,7 @@ import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
-import org.jetbrains.kotlin.descriptors.DeclarationDescriptorWithVisibility
-import org.jetbrains.kotlin.descriptors.ModuleDescriptor
-import org.jetbrains.kotlin.descriptors.PackageViewDescriptor
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.ir.backend.js.MainModule
 import org.jetbrains.kotlin.ir.backend.js.jsResolveLibraries
 import org.jetbrains.kotlin.ir.backend.js.loadIr
@@ -31,6 +28,8 @@ import java.io.PrintWriter
 
 class ApiTest : KotlinTestWithEnvironment() {
 
+    private val STDLIB_PATH = "js/js.translator/testData/api/stdlib"
+
     fun testStdlib() {
         val project = environment.project
         val configuration = environment.configuration
@@ -40,8 +39,10 @@ class ApiTest : KotlinTestWithEnvironment() {
 
         val config = JsConfig(project, configuration)
 
-        config.moduleDescriptors.single().checkRecursively("js/js.translator/testData/api/stdlib")
+        config.moduleDescriptors.single().checkRecursively(STDLIB_PATH)
     }
+
+    private val STDLIB_IR_PATH = "js/js.translator/testData/api/stdlib-ir"
 
     fun testIrStdlib() {
         val fullRuntimeKlib: String = System.getProperty("kotlin.js.full.stdlib.path")
@@ -61,14 +62,156 @@ class ApiTest : KotlinTestWithEnvironment() {
             listOf()
         ).module.descriptor
 
-        moduleDescriptor.checkRecursively("js/js.translator/testData/api/stdlib-ir")
+        moduleDescriptor.checkRecursively(STDLIB_IR_PATH)
+    }
+
+    private val STDLIB_DIFF_PATH = "js/js.translator/testData/api/stdlib-diff"
+    private val onlyInStdlib = setOf(
+        "org.khronos.webgl",
+        "org.w3c.css.masking",
+        "org.w3c.dom",
+        "org.w3c.dom.clipboard",
+        "org.w3c.dom.css",
+        "org.w3c.dom.encryptedmedia",
+        "org.w3c.dom.events",
+        "org.w3c.dom.mediacapture",
+        "org.w3c.dom.mediasource",
+        "org.w3c.dom.parsing",
+        "org.w3c.dom.pointerevents",
+        "org.w3c.dom.svg",
+        "org.w3c.dom.url",
+        "org.w3c.fetch",
+        "org.w3c.files",
+        "org.w3c.notifications",
+        "org.w3c.performance",
+        "org.w3c.workers",
+        "org.w3c.xhr"
+    )
+    private val onlyInStdlibIr = setOf("testUtils")
+
+    fun testApiDifference() {
+        val files = STDLIB_PATH.listFiles()
+        val irFiles = STDLIB_IR_PATH.listFiles()
+
+        val allNames = (files + irFiles).map { it.name.dropLast(3).split('-').first() }.toSet()
+
+        for (name in allNames) {
+            val a = STDLIB_PATH.readFileText(name)
+            val b = STDLIB_IR_PATH.readFileText(name)
+
+            if (a == null) {
+                assert(name in onlyInStdlibIr) { "Package '$name' unexpectedly only present in IR stdlib" }
+            } else if (b == null) {
+                assert(name in onlyInStdlib) { "Package '$name' unexpectedly only present in old stdlib" }
+            } else {
+                val d = diff(a, b)
+
+                if (d.isNotBlank()) {
+                    // Uncomment to overwrite the test data
+//                    PrintWriter("$STDLIB_DIFF_PATH/$name.kt").use { it.print(d) }
+                    KotlinTestUtils.assertEqualsToFile(File("$STDLIB_DIFF_PATH/$name.kt"), d)
+                }
+            }
+        }
+    }
+
+    private fun String.readFileText(name: String): String? {
+        val f = File("$this/$name.kt")
+        if (f.exists() && f.isFile) {
+            return f.readText()
+        } else {
+            var i = 0
+            var result: String? = null
+            while (true) {
+                val f = File("$this/$name-$i.kt")
+                if (!f.exists() || !f.isFile) break;
+
+                result = (result ?: "") + f.readText()
+
+                ++i
+            }
+
+            return result
+        }
+    }
+
+    private fun diff(a: String, b: String): String {
+        val aLines = a.lines()
+        val bLines = b.lines()
+
+        val dx = Array(aLines.size + 1) { IntArray(bLines.size + 1) }
+        val dy = Array(aLines.size + 1) { IntArray(bLines.size + 1)}
+        val c = Array(aLines.size + 1) { IntArray(bLines.size + 1)}
+
+        for (i in 0..aLines.size) {
+            c[i][0] = i
+            dx[i][0] = -1
+        }
+        for (j in 0..bLines.size) {
+            c[0][j] = j
+            dy[0][j] = -1
+        }
+        for (i in 1..aLines.size) {
+            for (j in 1..bLines.size) {
+                if (c[i - 1][j] <= c[i][j - 1]) {
+                    c[i][j] = c[i - 1][j] + 1
+                    dx[i][j] = -1
+                } else {
+                    c[i][j] = c[i][j - 1] + 1
+                    dy[i][j] = -1
+                }
+                if (aLines[i - 1] == bLines[j - 1] && c[i - 1][j - 1] < c[i][j]) {
+                    c[i][j] = c[i - 1][j - 1]
+                    dx[i][j] = -1
+                    dy[i][j] = -1
+                }
+            }
+        }
+
+        val result = mutableListOf<String>()
+
+        var x = aLines.size
+        var y = bLines.size
+        var hasDiff = false
+
+        while (x != 0 && y != 0) {
+            val tdx = dx[x][y]
+            val tdy = dy[x][y]
+
+            if (tdx != 0) {
+                if (tdy != 0) {
+                    if (hasDiff) {
+                        result += "--- ${x + 1},${y + 1} ---"
+                        hasDiff = false
+                    }
+                } else {
+                    result += "- ${aLines[x - 1]}"
+                    hasDiff = true
+                }
+            } else if (tdy != 0) {
+                result += "+ ${bLines[y - 1]}"
+                hasDiff = true
+            }
+
+            x += tdx
+            y += tdy
+        }
+
+        return result.reversed().fold(StringBuilder()) { sb, line -> sb.append(line).append("\n") }.toString()
+    }
+
+    private fun String.listFiles(): Array<File> {
+        val dirFile = File(this)
+        assert(dirFile.exists()) { "Directory does not exist: ${dirFile.absolutePath}" }
+        assert(dirFile.isDirectory) { "Not a directory: ${dirFile.absolutePath}" }
+        return dirFile.listFiles()!!
     }
 
     private fun ModuleDescriptor.checkRecursively(dir: String) {
         val dirFile = File(dir)
         assert(dirFile.exists()) { "Directory does not exist: ${dirFile.absolutePath}" }
         assert(dirFile.isDirectory) { "Not a directory: ${dirFile.absolutePath}" }
-        val files = File(dir).listFiles()!!.map { it.name }.toMutableSet()
+        val files = dirFile.listFiles()!!.map { it.name }.toMutableSet()
         allPackages().forEach { fqName ->
             getPackage(fqName).serialize()?.let { serialized ->
                 serialized.forEachIndexed { index, part ->
@@ -105,12 +248,13 @@ class ApiTest : KotlinTestWithEnvironment() {
     private fun PackageViewDescriptor.serialize(): List<String>? {
         val comparator = RecursiveDescriptorComparator(RECURSIVE_ALL.filterRecursion {
             when {
+                it is MemberDescriptor && it.isExpect -> false
                 it is DeclarationDescriptorWithVisibility && !it.visibility.isPublicAPI -> false
                 it is CallableMemberDescriptor && !it.kind.isReal -> false
                 it is PackageViewDescriptor -> false
                 else -> true
             }
-        })
+        }.renderDeclarationsFromOtherModules(true))
 
         val serialized = comparator.serializeRecursively(this).trim()
 

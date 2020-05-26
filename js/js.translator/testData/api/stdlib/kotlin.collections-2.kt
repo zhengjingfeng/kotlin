@@ -805,10 +805,28 @@ public abstract class BooleanIterator : kotlin.collections.Iterator<kotlin.Boole
     public abstract fun nextBoolean(): kotlin.Boolean
 }
 
+public abstract class BooleanIterator : kotlin.collections.Iterator<kotlin.Boolean> {
+    /*primary*/ public constructor BooleanIterator()
+    public final override /*1*/ fun next(): kotlin.Boolean
+    public abstract fun nextBoolean(): kotlin.Boolean
+}
+
 public abstract class ByteIterator : kotlin.collections.Iterator<kotlin.Byte> {
     /*primary*/ public constructor ByteIterator()
     public final override /*1*/ fun next(): kotlin.Byte
     public abstract fun nextByte(): kotlin.Byte
+}
+
+public abstract class ByteIterator : kotlin.collections.Iterator<kotlin.Byte> {
+    /*primary*/ public constructor ByteIterator()
+    public final override /*1*/ fun next(): kotlin.Byte
+    public abstract fun nextByte(): kotlin.Byte
+}
+
+public abstract class CharIterator : kotlin.collections.Iterator<kotlin.Char> {
+    /*primary*/ public constructor CharIterator()
+    public final override /*1*/ fun next(): kotlin.Char
+    public abstract fun nextChar(): kotlin.Char
 }
 
 public abstract class CharIterator : kotlin.collections.Iterator<kotlin.Char> {
@@ -826,10 +844,31 @@ public interface Collection</*0*/ out E> : kotlin.collections.Iterable<E> {
     public abstract override /*1*/ fun iterator(): kotlin.collections.Iterator<E>
 }
 
+public interface Collection</*0*/ out E> : kotlin.collections.Iterable<E> {
+    public abstract val size: kotlin.Int
+        public abstract fun <get-size>(): kotlin.Int
+    public abstract operator fun contains(/*0*/ element: E): kotlin.Boolean
+    public abstract fun containsAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
+    public abstract fun isEmpty(): kotlin.Boolean
+    public abstract override /*1*/ fun iterator(): kotlin.collections.Iterator<E>
+}
+
 public abstract class DoubleIterator : kotlin.collections.Iterator<kotlin.Double> {
     /*primary*/ public constructor DoubleIterator()
     public final override /*1*/ fun next(): kotlin.Double
     public abstract fun nextDouble(): kotlin.Double
+}
+
+public abstract class DoubleIterator : kotlin.collections.Iterator<kotlin.Double> {
+    /*primary*/ public constructor DoubleIterator()
+    public final override /*1*/ fun next(): kotlin.Double
+    public abstract fun nextDouble(): kotlin.Double
+}
+
+public abstract class FloatIterator : kotlin.collections.Iterator<kotlin.Float> {
+    /*primary*/ public constructor FloatIterator()
+    public final override /*1*/ fun next(): kotlin.Float
+    public abstract fun nextFloat(): kotlin.Float
 }
 
 public abstract class FloatIterator : kotlin.collections.Iterator<kotlin.Float> {
@@ -896,8 +935,23 @@ public abstract class IntIterator : kotlin.collections.Iterator<kotlin.Int> {
     public abstract fun nextInt(): kotlin.Int
 }
 
+public abstract class IntIterator : kotlin.collections.Iterator<kotlin.Int> {
+    /*primary*/ public constructor IntIterator()
+    public final override /*1*/ fun next(): kotlin.Int
+    public abstract fun nextInt(): kotlin.Int
+}
+
 public interface Iterable</*0*/ out T> {
     public abstract operator fun iterator(): kotlin.collections.Iterator<T>
+}
+
+public interface Iterable</*0*/ out T> {
+    public abstract operator fun iterator(): kotlin.collections.Iterator<T>
+}
+
+public interface Iterator</*0*/ out T> {
+    public abstract operator fun hasNext(): kotlin.Boolean
+    public abstract operator fun next(): T
 }
 
 public interface Iterator</*0*/ out T> {
@@ -943,73 +997,17 @@ public interface List</*0*/ out E> : kotlin.collections.Collection<E> {
     public abstract fun subList(/*0*/ fromIndex: kotlin.Int, /*1*/ toIndex: kotlin.Int): kotlin.collections.List<E>
 }
 
-public interface ListIterator</*0*/ out T> : kotlin.collections.Iterator<T> {
-    public abstract override /*1*/ fun hasNext(): kotlin.Boolean
-    public abstract fun hasPrevious(): kotlin.Boolean
-    public abstract override /*1*/ fun next(): T
-    public abstract fun nextIndex(): kotlin.Int
-    public abstract fun previous(): T
-    public abstract fun previousIndex(): kotlin.Int
-}
-
-public abstract class LongIterator : kotlin.collections.Iterator<kotlin.Long> {
-    /*primary*/ public constructor LongIterator()
-    public final override /*1*/ fun next(): kotlin.Long
-    public abstract fun nextLong(): kotlin.Long
-}
-
-public interface Map</*0*/ K, /*1*/ out V> {
-    public abstract val entries: kotlin.collections.Set<kotlin.collections.Map.Entry<K, V>>
-        public abstract fun <get-entries>(): kotlin.collections.Set<kotlin.collections.Map.Entry<K, V>>
-    public abstract val keys: kotlin.collections.Set<K>
-        public abstract fun <get-keys>(): kotlin.collections.Set<K>
-    public abstract val size: kotlin.Int
-        public abstract fun <get-size>(): kotlin.Int
-    public abstract val values: kotlin.collections.Collection<V>
-        public abstract fun <get-values>(): kotlin.collections.Collection<V>
-    public abstract fun containsKey(/*0*/ key: K): kotlin.Boolean
-    public abstract fun containsValue(/*0*/ value: V): kotlin.Boolean
-    public abstract operator fun get(/*0*/ key: K): V?
-    public abstract fun isEmpty(): kotlin.Boolean
-
-    public interface Entry</*0*/ out K, /*1*/ out V> {
-        public abstract val key: K
-            public abstract fun <get-key>(): K
-        public abstract val value: V
-            public abstract fun <get-value>(): V
-    }
-}
-
-public interface MutableCollection</*0*/ E> : kotlin.collections.Collection<E>, kotlin.collections.MutableIterable<E> {
-    public abstract fun add(/*0*/ element: E): kotlin.Boolean
-    public abstract fun addAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
-    public abstract fun clear(): kotlin.Unit
-    public abstract override /*2*/ fun iterator(): kotlin.collections.MutableIterator<E>
-    public abstract fun remove(/*0*/ element: E): kotlin.Boolean
-    public abstract fun removeAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
-    public abstract fun retainAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
-}
-
-public interface MutableIterable</*0*/ out T> : kotlin.collections.Iterable<T> {
-    public abstract override /*1*/ fun iterator(): kotlin.collections.MutableIterator<T>
-}
-
-public interface MutableIterator</*0*/ out T> : kotlin.collections.Iterator<T> {
-    public abstract fun remove(): kotlin.Unit
-}
-
-public interface MutableList</*0*/ E> : kotlin.collections.List<E>, kotlin.collections.MutableCollection<E> {
-    public abstract override /*1*/ fun add(/*0*/ element: E): kotlin.Boolean
-    public abstract fun add(/*0*/ index: kotlin.Int, /*1*/ element: E): kotlin.Unit
-    public abstract fun addAll(/*0*/ index: kotlin.Int, /*1*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
-    public abstract override /*1*/ fun addAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
-    public abstract override /*1*/ fun clear(): kotlin.Unit
-    public abstract override /*1*/ fun listIterator(): kotlin.collections.MutableListIterator<E>
-    public abstract override /*1*/ fun listIterator(/*0*/ index: kotlin.Int): kotlin.collections.MutableListIterator<E>
-    public abstract override /*1*/ fun remove(/*0*/ element: E): kotlin.Boolean
-    public abstract override /*1*/ fun removeAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
-    public abstract fun removeAt(/*0*/ index: kotlin.Int): E
-    public abstract override /*1*/ fun retainAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
-    public abstract operator fun set(/*0*/ index: kotlin.Int, /*1*/ element: E): E
-    public abstract override /*1*/ fun subList(/*0*/ fromIndex: kotlin.Int, /*1*/ toIndex: kotlin.Int): kotlin.collections.MutableList<E>
+public interface List</*0*/ out E> : kotlin.collections.Collection<E> {
+    public abstract override /*1*/ val size: kotlin.Int
+        public abstract override /*1*/ fun <get-size>(): kotlin.Int
+    public abstract override /*1*/ fun contains(/*0*/ element: E): kotlin.Boolean
+    public abstract override /*1*/ fun containsAll(/*0*/ elements: kotlin.collections.Collection<E>): kotlin.Boolean
+    public abstract operator fun get(/*0*/ index: kotlin.Int): E
+    public abstract fun indexOf(/*0*/ element: E): kotlin.Int
+    public abstract override /*1*/ fun isEmpty(): kotlin.Boolean
+    public abstract override /*1*/ fun iterator(): kotlin.collections.Iterator<E>
+    public abstract fun lastIndexOf(/*0*/ element: E): kotlin.Int
+    public abstract fun listIterator(): kotlin.collections.ListIterator<E>
+    public abstract fun listIterator(/*0*/ index: kotlin.Int): kotlin.collections.ListIterator<E>
+    public abstract fun subList(/*0*/ fromIndex: kotlin.Int, /*1*/ toIndex: kotlin.Int): kotlin.collections.List<E>
 }
