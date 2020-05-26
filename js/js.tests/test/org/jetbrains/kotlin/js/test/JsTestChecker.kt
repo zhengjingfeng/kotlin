@@ -232,7 +232,7 @@ object V8IrJsTestChecker : AbstractV8JsTestChecker() {
 }
 
 object MyIrJsTestChecker : AbstractJsTestChecker() {
-    val vm = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8"))
+    val vm = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8-8.1.307"))
 
     override fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any? {
         vm.saveState()

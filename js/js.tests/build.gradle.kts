@@ -1,5 +1,6 @@
 import com.moowork.gradle.node.NodeExtension
 import com.moowork.gradle.node.npm.NpmTask
+import com.moowork.gradle.node.npm.NpxTask
 import de.undercouch.gradle.tasks.download.Download
 import org.gradle.internal.os.OperatingSystem
 
@@ -13,6 +14,11 @@ plugins {
 node {
     download = true
     version = "10.16.2"
+}
+
+val installV8 by tasks.register<NpxTask>("installV8") {
+    command = "jsvu"
+    setArgs(listOf("v8@8.1.307"))
 }
 
 val antLauncherJar by configurations.creating
@@ -109,6 +115,7 @@ fun Test.setUpJsBoxTests(jsEnabled: Boolean, jsIrEnabled: Boolean) {
         systemProperty("kotlin.js.reduced.stdlib.path", "libraries/stdlib/js-ir-minimal-for-test/build/classes/kotlin/js/main")
         dependsOn(":kotlin-test:kotlin-test-js-ir:compileKotlinJs")
         systemProperty("kotlin.js.kotlin.test.path", "libraries/kotlin.test/js-ir/build/classes/kotlin/js/main")
+        dependsOn(installV8)
     }
 
     exclude("org/jetbrains/kotlin/js/test/wasm/semantics/*")
