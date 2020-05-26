@@ -60,3 +60,7 @@ interface IrDeclarationWithName : IrDeclaration {
 }
 
 interface IrOverridableMember: OverridableMember, IrDeclarationWithVisibility, IrDeclarationWithName, IrSymbolOwner
+
+interface IrRebindableDeclaration<S : IrSymbol>: IrSymbolDeclaration<S> {
+    override var symbol: S
+}

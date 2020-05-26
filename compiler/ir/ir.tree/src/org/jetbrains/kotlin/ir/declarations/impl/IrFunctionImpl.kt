@@ -8,7 +8,6 @@ package org.jetbrains.kotlin.ir.declarations.impl
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibility
-import org.jetbrains.kotlin.ir.declarations.IrAttributeContainer
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.carriers.FunctionCarrier
 import org.jetbrains.kotlin.ir.symbols.IrPropertySymbol
@@ -18,51 +17,28 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 import org.jetbrains.kotlin.name.Name
 
-class IrFunctionImpl(
+abstract class IrFunctionCommonImpl(
     startOffset: Int,
     endOffset: Int,
     origin: IrDeclarationOrigin,
     override val symbol: IrSimpleFunctionSymbol,
-    name: Name = symbol.descriptor.name,
-    visibility: Visibility = symbol.descriptor.visibility,
-    override val modality: Modality = symbol.descriptor.modality,
+    name: Name,
+    visibility: Visibility,
+    override val modality: Modality,
     returnType: IrType,
-    isInline: Boolean = symbol.descriptor.isInline,
-    isExternal: Boolean = symbol.descriptor.isExternal,
-    override val isTailrec: Boolean = symbol.descriptor.isTailrec,
-    override val isSuspend: Boolean = symbol.descriptor.isSuspend,
-    override val isOperator: Boolean = symbol.descriptor.isOperator,
-    isExpect: Boolean = symbol.descriptor.isExpect,
-    override val isFakeOverride: Boolean = origin == IrDeclarationOrigin.FAKE_OVERRIDE
+    isInline: Boolean,
+    isExternal: Boolean,
+    override val isTailrec: Boolean,
+    override val isSuspend: Boolean,
+    override val isOperator: Boolean,
+    isExpect: Boolean,
+    override val isFakeOverride: Boolean
 ) :
     IrFunctionBase<FunctionCarrier>(startOffset, endOffset, origin, name, visibility, isInline, isExternal, isExpect, returnType),
     IrSimpleFunction,
     FunctionCarrier {
 
-    constructor(
-        startOffset: Int,
-        endOffset: Int,
-        origin: IrDeclarationOrigin,
-        symbol: IrSimpleFunctionSymbol,
-        returnType: IrType,
-        visibility: Visibility = symbol.descriptor.visibility,
-        modality: Modality = symbol.descriptor.modality
-    ) : this(
-        startOffset, endOffset, origin, symbol,
-        symbol.descriptor.name,
-        visibility,
-        modality,
-        returnType,
-        isInline = symbol.descriptor.isInline,
-        isExternal = symbol.descriptor.isExternal,
-        isTailrec = symbol.descriptor.isTailrec,
-        isSuspend = symbol.descriptor.isSuspend,
-        isExpect = symbol.descriptor.isExpect,
-        isFakeOverride = origin == IrDeclarationOrigin.FAKE_OVERRIDE,
-        isOperator = symbol.descriptor.isOperator
-    )
-
-    override val descriptor: FunctionDescriptor = symbol.descriptor
+    abstract override val descriptor: FunctionDescriptor
 
     override var overriddenSymbolsField: List<IrSimpleFunctionSymbol> = emptyList()
 
@@ -94,6 +70,54 @@ class IrFunctionImpl(
             }
         }
 
+    override fun <R, D> accept(visitor: IrElementVisitor<R, D>, data: D): R =
+        visitor.visitSimpleFunction(this, data)
+}
+
+class IrFunctionImpl(
+    startOffset: Int,
+    endOffset: Int,
+    origin: IrDeclarationOrigin,
+    override val symbol: IrSimpleFunctionSymbol,
+    name: Name = symbol.descriptor.name,
+    visibility: Visibility = symbol.descriptor.visibility,
+    override val modality: Modality = symbol.descriptor.modality,
+    returnType: IrType,
+    isInline: Boolean = symbol.descriptor.isInline,
+    isExternal: Boolean = symbol.descriptor.isExternal,
+    override val isTailrec: Boolean = symbol.descriptor.isTailrec,
+    override val isSuspend: Boolean = symbol.descriptor.isSuspend,
+    override val isOperator: Boolean = symbol.descriptor.isOperator,
+    isExpect: Boolean = symbol.descriptor.isExpect,
+    override val isFakeOverride: Boolean = origin == IrDeclarationOrigin.FAKE_OVERRIDE
+) : IrFunctionCommonImpl(startOffset, endOffset, origin, symbol, name, visibility, modality, returnType, isInline,
+    isExternal, isTailrec, isSuspend, isOperator, isExpect, isFakeOverride) {
+
+    constructor(
+        startOffset: Int,
+        endOffset: Int,
+        origin: IrDeclarationOrigin,
+        symbol: IrSimpleFunctionSymbol,
+        returnType: IrType,
+        visibility: Visibility = symbol.descriptor.visibility,
+        modality: Modality = symbol.descriptor.modality
+    ) : this(
+        startOffset, endOffset, origin, symbol,
+        symbol.descriptor.name,
+        visibility,
+        modality,
+        returnType,
+        isInline = symbol.descriptor.isInline,
+        isExternal = symbol.descriptor.isExternal,
+        isTailrec = symbol.descriptor.isTailrec,
+        isSuspend = symbol.descriptor.isSuspend,
+        isExpect = symbol.descriptor.isExpect,
+        isFakeOverride = origin == IrDeclarationOrigin.FAKE_OVERRIDE,
+        isOperator = symbol.descriptor.isOperator
+    )
+
+    override val descriptor: FunctionDescriptor = symbol.descriptor
+
     // Used by kotlin-native in InteropLowering.kt and IrUtils2.kt
     constructor(
         startOffset: Int,
@@ -112,4 +136,30 @@ class IrFunctionImpl(
 
     override fun <R, D> accept(visitor: IrElementVisitor<R, D>, data: D): R =
         visitor.visitSimpleFunction(this, data)
+}
+
+class IrFakeOverrideFunctionImpl(
+    startOffset: Int,
+    endOffset: Int,
+    origin: IrDeclarationOrigin,
+    override var symbol: IrSimpleFunctionSymbol,
+    name: Name,
+    visibility: Visibility,
+    modality: Modality,
+    returnType: IrType,
+    isInline: Boolean,
+    isExternal: Boolean,
+    isTailrec: Boolean,
+    isSuspend: Boolean,
+    isOperator: Boolean,
+    isExpect: Boolean
+) : IrFunctionCommonImpl(startOffset, endOffset, origin, symbol, name, visibility, modality, returnType, isInline,
+    isExternal, isTailrec, isSuspend, isOperator, isExpect,
+    isFakeOverride = true),
+    IrFakeOverrideFunction
+{
+    override val descriptor: FunctionDescriptor = symbol.descriptor
+    init {
+        symbol.bind(this)
+    }
 }
