@@ -27,7 +27,7 @@ class SimpleProcessBasedScriptEngine(
 
         val sb = StringBuilder()
 
-        val END = "\n<END>\n"
+        val END = "<END>\n"
         while (vm.isAlive) {
             val n = stdout.available()
             if (n == 0) continue
@@ -43,8 +43,8 @@ class SimpleProcessBasedScriptEngine(
         if (stderr.available() > 0) {
             val err = StringBuilder()
 
-            while(vm.isAlive) {
-                val count = stdout.read(buffer)
+            while(vm.isAlive && stderr.available() > 0) {
+                val count = stderr.read(buffer)
                 err.append(String(buffer, 0, count))
                 if (count <= 0) break
             }
@@ -52,7 +52,7 @@ class SimpleProcessBasedScriptEngine(
             error(err.toString())
         }
 
-        return sb.removeSuffix(END).toString()
+        return sb.removeSuffix(END).removeSuffix("\n").toString()
     }
 
     override fun loadFile(path: String) {
