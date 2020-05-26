@@ -46,7 +46,6 @@ val jsMainSources by task<Sync> {
     val sources = listOf(
         "core/builtins/src/kotlin/",
         "libraries/stdlib/js/src/",
-        "libraries/stdlib/js/runtime/",
 
         // TODO get rid - move to test module
         "js/js.translator/testData/_commonFiles/"
@@ -57,10 +56,7 @@ val jsMainSources by task<Sync> {
         "libraries/stdlib/js/src/generated/**",
 
         // JS-specific optimized version of emptyArray() already defined
-        "core/builtins/src/kotlin/ArrayIntrinsics.kt",
-
-        // IR-specific version is defined in libraries/stdlib/js-ir/runtime/arrays.kt
-        "libraries/stdlib/js/runtime/arrayUtils.kt"
+        "core/builtins/src/kotlin/ArrayIntrinsics.kt"
     )
 
     sources.forEach { path ->
