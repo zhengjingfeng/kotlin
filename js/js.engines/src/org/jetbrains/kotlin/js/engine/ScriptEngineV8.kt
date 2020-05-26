@@ -50,7 +50,7 @@ class ScriptEngineV8(LIBRARY_PATH_BASE: String) : ScriptEngine {
         return myRuntime.executeScript(script) as T
     }
 
-    override fun evalVoid(script: String) {
+    fun evalVoid(script: String) {
         return myRuntime.executeVoidScript(script)
     }
 
@@ -68,7 +68,7 @@ class ScriptEngineV8Lazy(LIBRARY_PATH_BASE: String) : ScriptEngine {
 
     override fun saveState() = engine.saveState()
 
-    override fun evalVoid(script: String) = engine.evalVoid(script)
+    fun evalVoid(script: String) = engine.evalVoid(script)
 
     override fun loadFile(path: String) = engine.loadFile(path)
 

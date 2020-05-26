@@ -7,9 +7,6 @@ package org.jetbrains.kotlin.js.engine
 
 interface ScriptEngine {
     fun eval(script: String): String
-    fun evalVoid(script: String) {
-        eval(script)
-    }
     // TODO loadFiles
     fun loadFile(path: String)
     // TODO remove?
