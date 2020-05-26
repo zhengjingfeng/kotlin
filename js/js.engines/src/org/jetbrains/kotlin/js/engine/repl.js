@@ -33,7 +33,7 @@ while (true) {
     try {
         print(eval(code));
     } catch(e) {
-        printErr(e.stack);
+        printErr(e.stack != null ? e.stack : e.toString());
         printErr('\nCODE:\n' + code);
     }
     print('<END>');
