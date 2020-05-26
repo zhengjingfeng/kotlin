@@ -43,8 +43,8 @@ class _SequencesTest {
         assertEquals(3, sequenceOf<Int>(3, 2).minBy { "a" })
         assertEquals(2, sequenceOf<Int>(3, 2).minBy { it.toString() })
         assertEquals(3, sequenceOf<Int>(2, 3).minBy { -it })
-        assertEquals('b', sequenceOf('a', 'b').maxBy { "x$it" })
-        assertEquals("abc", sequenceOf("b", "abc").maxBy { it.length })
+        assertEquals('a', sequenceOf('a', 'b').minBy { "x$it" })
+        assertEquals("b", sequenceOf("b", "abc").minBy { it.length })
     }
 
     @Test

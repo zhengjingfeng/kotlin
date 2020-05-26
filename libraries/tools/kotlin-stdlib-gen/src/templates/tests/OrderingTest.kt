@@ -239,15 +239,23 @@ object OrderingTest : TestTemplateGroupBase() {
         include(Lists, ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned)
     } builder {
         val type = if (f == Lists) "MutableList" else (primitive?.name ?: "") + "Array"
+        val typeParam = if (primitive == null) "<*>" else ""
         val conversion = if (primitive == PrimitiveType.Boolean) "it % 2 == 0" else "it.to${test.P}()"
         body {
             """
-            val data = $type(100) { $conversion }
-            val original = data.toMutableList()
-            data.shuffle()
-            val shuffled = data.toMutableList()
-            assertNotEquals(original, shuffled)
-            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+            fun test(data: $type$typeParam) {
+                val original = data.toMutableList()
+                data.shuffle()
+                val shuffled = data.toMutableList()
+                assertNotEquals(original, shuffled)
+                assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+            }
+            test($type(100) { $conversion })
+            """
+        }
+        bodyAppend(Lists, ArraysOfObjects) {
+            """
+            test($mutableOf(1, "x", null, Any(), 'a', 2u, 5.0))
             """
         }
     }
@@ -256,17 +264,25 @@ object OrderingTest : TestTemplateGroupBase() {
         include(Lists, ArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned)
     } builder {
         val type = if (f == Lists) "MutableList" else (primitive?.name ?: "") + "Array"
+        val typeParam = if (primitive == null) "<*>" else ""
         val conversion = if (primitive == PrimitiveType.Boolean) "it % 2 == 0" else "it.to${test.P}()"
         body {
             """
-            val data = $type(16) { $conversion }
-            val seed = Random.nextInt()
-            val original = data.toMutableList()
-            val originalShuffled = original.shuffled(Random(seed))
-            data.shuffle(Random(seed))
-            val shuffled = data.toMutableList()
-            assertNotEquals(original, shuffled)
-            assertEquals(originalShuffled, shuffled)
+            fun test(data: $type$typeParam) {
+                val seed = Random.nextInt()
+                val original = data.toMutableList()
+                val originalShuffled = original.shuffled(Random(seed))
+                data.shuffle(Random(seed))
+                val shuffled = data.toMutableList()
+                assertNotEquals(original, shuffled)
+                assertEquals(originalShuffled, shuffled)
+            }
+            test($type(16) { $conversion })
+            """
+        }
+        bodyAppend(Lists, ArraysOfObjects) {
+            """
+            test($mutableOf(1, "x", null, Any(), 'a', 2u, 5.0))
             """
         }
     }

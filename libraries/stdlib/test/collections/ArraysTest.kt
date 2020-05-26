@@ -388,17 +388,6 @@ class ArraysTest {
         expect('b', { charArrayOf('a', 'b').max() })
     }
 
-    @Test fun minWith() {
-        assertEquals(null, arrayOf<Int>().minWith(naturalOrder()) )
-        assertEquals("a", arrayOf("a", "B").minWith(STRING_CASE_INSENSITIVE_ORDER))
-    }
-
-    @Test fun minWithInPrimitiveArrays() {
-        expect(null, { intArrayOf().minWith(naturalOrder()) })
-        expect(1, { intArrayOf(1).minWith(naturalOrder()) })
-        expect(4, { intArrayOf(2, 3, 4).minWith(compareBy { it % 4 }) })
-    }
-
     @Test fun maxWith() {
         assertEquals(null, arrayOf<Int>().maxWith(naturalOrder()) )
         assertEquals("B", arrayOf("a", "B").maxWith(STRING_CASE_INSENSITIVE_ORDER))
@@ -408,25 +397,6 @@ class ArraysTest {
         expect(null, { intArrayOf().maxWith(naturalOrder()) })
         expect(1, { intArrayOf(1).maxWith(naturalOrder()) })
         expect(-4, { intArrayOf(2, 3, -4).maxWith(compareBy { it*it }) })
-    }
-
-    @Test fun minBy() {
-        expect(null, { arrayOf<Int>().minBy { it } })
-        expect(1, { arrayOf(1).minBy { it } })
-        expect(3, { arrayOf(2, 3).minBy { -it } })
-        expect('a', { arrayOf('a', 'b').minBy { "x$it" } })
-        expect("b", { arrayOf("b", "abc").minBy { it.length } })
-    }
-
-    @Test fun minByInPrimitiveArrays() {
-        expect(null, { intArrayOf().minBy { it } })
-        expect(1, { intArrayOf(1).minBy { it } })
-        expect(3, { intArrayOf(2, 3).minBy { -it } })
-        expect(2000000000000, { longArrayOf(3000000000000, 2000000000000).minBy { it + 1 } })
-        expect(1, { byteArrayOf(1, 3, 2).minBy { it * it } })
-        expect(3, { shortArrayOf(3, 2).minBy { "a" } })
-        expect(2.0F, { floatArrayOf(3.0F, 2.0F).minBy { it.toString() } })
-        expect(2.0, { doubleArrayOf(2.0, 3.0).minBy { it * it } })
     }
 
     @Test fun maxBy() {
@@ -1290,102 +1260,6 @@ class ArraysTest {
         )
     }
 
-    @Test fun reverseInPlace() {
-
-        fun <TArray, T> doTest(build: Iterable<Int>.() -> TArray, reverse: TArray.() -> Unit, snapshot: TArray.() -> List<T>) {
-            val arrays = (0..4).map { n -> (1..n).build() }
-            for (array in arrays) {
-                val original = array.snapshot()
-                array.reverse()
-                val reversed = array.snapshot()
-                assertEquals(original.asReversed(), reversed)
-            }
-        }
-
-        doTest(build = { map {it}.toIntArray() },               reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toLong()}.toLongArray() },     reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toByte()}.toByteArray() },     reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toShort()}.toShortArray() },   reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toFloat()}.toFloatArray() },   reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toDouble()}.toDoubleArray() }, reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {'a' + it}.toCharArray() },        reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it % 2 == 0}.toBooleanArray() },  reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toString()}.toTypedArray() },  reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toString()}.toTypedArray() as Array<out String> },  reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toUInt()}.toUIntArray() },     reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toULong()}.toULongArray() },   reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toUByte()}.toUByteArray() },   reverse = { reverse() }, snapshot = { toList() })
-        doTest(build = { map {it.toUShort()}.toUShortArray() }, reverse = { reverse() }, snapshot = { toList() })
-    }
-
-    @Test
-    fun reverseRangeInPlace() {
-
-        fun <TArray, T> doTest(
-            build: Iterable<Int>.() -> TArray,
-            reverse: TArray.(fromIndex: Int, toIndex: Int) -> Unit,
-            snapshot: TArray.() -> List<T>
-        ) {
-            val arrays = (0..7).map { n -> n to (0 until n).build() }
-            for ((size, array) in arrays) {
-                for (fromIndex in 0 until size) {
-                    for (toIndex in fromIndex..size) {
-                        val original = array.snapshot().toMutableList()
-                        array.reverse(fromIndex, toIndex)
-                        val reversed = array.snapshot()
-                        assertEquals(original.apply { subList(fromIndex, toIndex).reverse() }, reversed)
-                    }
-                }
-
-                assertFailsWith<IndexOutOfBoundsException> { array.reverse(-1, size) }
-                assertFailsWith<IndexOutOfBoundsException> { array.reverse(0, size + 1) }
-                assertFailsWith<IllegalArgumentException> { array.reverse(0, -1) }
-            }
-        }
-
-        doTest(build = { map {it.toString()}.toTypedArray() },  reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toString()}.toTypedArray() as Array<out String> },  reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-
-        doTest(build = { map {it}.toIntArray() },               reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toLong()}.toLongArray() },     reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toByte()}.toByteArray() },     reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toShort()}.toShortArray() },   reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toFloat()}.toFloatArray() },   reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toDouble()}.toDoubleArray() }, reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {'a' + it}.toCharArray() },        reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it % 2 == 0}.toBooleanArray() },  reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toUInt()}.toUIntArray() },     reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toULong()}.toULongArray() },   reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toUByte()}.toUByteArray() },   reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-        doTest(build = { map {it.toUShort()}.toUShortArray() }, reverse = { from, to -> reverse(from, to) }, snapshot = { toList() })
-    }
-
-
-    @Test fun reversed() {
-        expect(listOf(3, 2, 1)) { intArrayOf(1, 2, 3).reversed() }
-        expect(listOf<Byte>(3, 2, 1)) { byteArrayOf(1, 2, 3).reversed() }
-        expect(listOf<Short>(3, 2, 1)) { shortArrayOf(1, 2, 3).reversed() }
-        expect(listOf<Long>(3, 2, 1)) { longArrayOf(1, 2, 3).reversed() }
-        expect(listOf(3F, 2F, 1F)) { floatArrayOf(1F, 2F, 3F).reversed() }
-        expect(listOf(3.0, 2.0, 1.0)) { doubleArrayOf(1.0, 2.0, 3.0).reversed() }
-        expect(listOf('3', '2', '1')) { charArrayOf('1', '2', '3').reversed() }
-        expect(listOf(false, false, true)) { booleanArrayOf(true, false, false).reversed() }
-        expect(listOf("3", "2", "1")) { arrayOf("1", "2", "3").reversed() }
-        expect(listOf("3", "2", "1")) { (arrayOf("1", "2", "3") as Array<out String>).reversed() }
-    }
-
-    @Test fun reversedArray() {
-        assertArrayNotSameButEquals(intArrayOf(3, 2, 1), intArrayOf(1, 2, 3).reversedArray())
-        assertArrayNotSameButEquals(byteArrayOf(3, 2, 1), byteArrayOf(1, 2, 3).reversedArray())
-        assertArrayNotSameButEquals(shortArrayOf(3, 2, 1), shortArrayOf(1, 2, 3).reversedArray())
-        assertArrayNotSameButEquals(longArrayOf(3, 2, 1), longArrayOf(1, 2, 3).reversedArray())
-        assertArrayNotSameButEquals(floatArrayOf(3F, 2F, 1F), floatArrayOf(1F, 2F, 3F).reversedArray())
-        assertArrayNotSameButEquals(doubleArrayOf(3.0, 2.0, 1.0), doubleArrayOf(1.0, 2.0, 3.0).reversedArray())
-        assertArrayNotSameButEquals(charArrayOf('3', '2', '1'), charArrayOf('1', '2', '3').reversedArray())
-        assertArrayNotSameButEquals(booleanArrayOf(false, false, true), booleanArrayOf(true, false, false).reversedArray())
-        assertArrayNotSameButEquals(arrayOf("3", "2", "1"), arrayOf("1", "2", "3").reversedArray())
-        assertArrayNotSameButEquals(arrayOf<String>("3", "2", "1"), (arrayOf("1", "2", "3") as Array<out String>).reversedArray())
-    }
 
     @Test fun onEach() {
         var count = 0
@@ -1698,33 +1572,6 @@ class ArraysTest {
         assertEquals(Array(0, { "" }).asList(), emptyList<String>())
     }
 
-    @Test fun sort() {
-        val intArr = intArrayOf(5, 2, 1, 9, 80, Int.MIN_VALUE, Int.MAX_VALUE)
-        intArr.sort()
-        assertArrayNotSameButEquals(intArrayOf(Int.MIN_VALUE, 1, 2, 5, 9, 80, Int.MAX_VALUE), intArr)
-        intArr.sortDescending()
-        assertArrayNotSameButEquals(intArrayOf(Int.MAX_VALUE, 80, 9, 5, 2, 1, Int.MIN_VALUE), intArr)
-
-        val longArr = longArrayOf(200, 2, 1, 4, 3, Long.MIN_VALUE, Long.MAX_VALUE)
-        longArr.sort()
-        assertArrayNotSameButEquals(longArrayOf(Long.MIN_VALUE, 1, 2, 3, 4, 200, Long.MAX_VALUE), longArr)
-        longArr.sortDescending()
-        assertArrayNotSameButEquals(longArrayOf(Long.MAX_VALUE, 200, 4, 3, 2, 1, Long.MIN_VALUE), longArr)
-
-        val charArr = charArrayOf('d', 'c', 'E', 'a', '\u0000', '\uFFFF')
-        charArr.sort()
-        assertArrayNotSameButEquals(charArrayOf('\u0000', 'E', 'a', 'c', 'd', '\uFFFF'), charArr)
-        charArr.sortDescending()
-        assertArrayNotSameButEquals(charArrayOf('\uFFFF', 'd', 'c', 'a', 'E', '\u0000'), charArr)
-
-
-        val strArr = arrayOf("9", "80", "all", "Foo")
-        strArr.sort()
-        assertArrayNotSameButEquals(arrayOf("80", "9", "Foo", "all"), strArr)
-        strArr.sortDescending()
-        assertArrayNotSameButEquals(arrayOf("all", "Foo", "9", "80"), strArr)
-    }
-
     @Test fun sortRange() {
 
         fun <TArray, T : Comparable<T>> doTest(
@@ -1825,25 +1672,6 @@ class ArraysTest {
         }
     }
 
-    @Test fun sortByInPlace() {
-        val data = arrayOf("aa" to 20, "ab" to 3, "aa" to 3)
-        data.sortBy { it.second }
-        assertArrayNotSameButEquals(arrayOf("ab" to 3, "aa" to 3, "aa" to 20), data)
-
-        data.sortBy { it.first }
-        assertArrayNotSameButEquals(arrayOf("aa" to 3, "aa" to 20, "ab" to 3), data)
-
-        data.sortBy { (it.first + it.second).length }
-        assertArrayNotSameButEquals(arrayOf("aa" to 3, "ab" to 3, "aa" to 20), data)
-    }
-
-    @Test fun sortedBy() {
-        val values = arrayOf("ac", "aD", "aba")
-        val indices = values.indices.toList().toIntArray()
-
-        assertEquals(listOf(1, 2, 0), indices.sortedBy { values[it] })
-    }
-
     @Test fun sortByStable() {
         val keyRange = 'A'..'D'
         for (size in listOf(10, 100, 2000)) {
@@ -1871,13 +1699,6 @@ class ArraysTest {
 
     @Test fun sortedWith() {
         val comparator = compareBy { it: Int -> it % 3 }.thenByDescending { it }
-        fun <A, T> arrayData(array: A, comparator: Comparator<T>) = ArraySortedChecker<A, T>(array, comparator)
-
-        arrayData(intArrayOf(0, 1, 2, 3, 4, 5), comparator)
-                .checkSorted<List<Int>>( { sortedWith(comparator) }, { sortedWith(comparator.reversed()) }, { iterator() })
-
-        arrayData(arrayOf(0, 1, 2, 3, 4, 5), comparator)
-                .checkSorted<Array<out Int>>( { sortedArrayWith(comparator) }, { sortedArrayWith(comparator.reversed()) }, { iterator() })
 
         // in-place
         val array = Array(6) { it }
@@ -1938,82 +1759,6 @@ class ArraysTest {
             val actual = sorted[i]
             assertSame(expected, actual)
         }
-    }
-
-    private inline fun <T> testShuffle(array: T, shuffle: T.() -> Unit, toList: T.() -> List<*>) {
-        val original = array.toList()
-        array.shuffle()
-        val shuffled = array.toList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
-    }
-
-    @Test
-    fun shuffle() {
-
-        val data = ByteArray(100) { it.toByte() }
-        val original = data.toList()
-        data.shuffle()
-        val shuffled = data.toList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
-
-
-        val numbers = List(100) { it }
-        testShuffle(numbers.map(Int::toInt).toIntArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toLong).toLongArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toByte).toByteArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toShort).toShortArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toFloat).toFloatArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toDouble).toDoubleArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toChar).toCharArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map { it % 2 == 0 }.toBooleanArray(), { shuffle() }, { toList() })
-
-        testShuffle(numbers.map(Int::toUInt).toUIntArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toULong).toULongArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toUByte).toUByteArray(), { shuffle() }, { toList() })
-        testShuffle(numbers.map(Int::toUShort).toUShortArray(), { shuffle() }, { toList() })
-
-        testShuffle(arrayOf(1, "x", null, Any(), 'a', 2u, 5.0), { shuffle() }, { toList() })
-    }
-
-    private inline fun <T> testShuffleR(array: T, shuffle: T.(Random) -> Unit, toList: T.() -> List<*>) {
-        val seed = Random.nextInt()
-        val original = array.toList()
-        val originalShuffled = original.shuffled(Random(seed))
-        array.shuffle(Random(seed))
-        val shuffled = array.toList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
-    }
-
-    @Test
-    fun shufflePredictably() {
-        val data = ByteArray(16) { it.toByte() }
-        val seed = Random.nextInt()
-        val original = data.toList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
-
-        val numbers = List(16) { it }
-        testShuffleR(numbers.map(Int::toInt).toIntArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toLong).toLongArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toByte).toByteArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toShort).toShortArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toFloat).toFloatArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toDouble).toDoubleArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toChar).toCharArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map { it % 2 == 0 }.toBooleanArray(), { r -> shuffle(r) }, { toList() })
-
-        testShuffleR(numbers.map(Int::toUInt).toUIntArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toULong).toULongArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toUByte).toUByteArray(), { r -> shuffle(r) }, { toList() })
-        testShuffleR(numbers.map(Int::toUShort).toUShortArray(), { r -> shuffle(r) }, { toList() })
-
-        testShuffleR(arrayOf(1, "x", null, Any(), 'a', 2u, 5.0), { r -> shuffle(r) }, { toList() })
     }
 
     @Test

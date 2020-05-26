@@ -31,8 +31,8 @@ object AggregatesTest : TestTemplateGroupBase() {
         }
         bodyAppend(Iterables, Sequences, ArraysOfObjects) {
             """
-            assertEquals('b', $of('a', 'b').maxBy { "x${"$"}it" })
-            assertEquals("abc", $of("b", "abc").maxBy { it.length })
+            assertEquals('a', $of('a', 'b').minBy { "x${"$"}it" })
+            assertEquals("b", $of("b", "abc").minBy { it.length })
             """
         }
 
@@ -43,14 +43,14 @@ object AggregatesTest : TestTemplateGroupBase() {
         }
         body(ArraysOfPrimitives, PrimitiveType.Boolean) {
             """
-            assertEquals(true, booleanArrayOf(true, false).maxBy { it.toString() })
-            assertEquals(false, booleanArrayOf(true, false).maxBy { it.toString().length })
+            assertEquals(false, booleanArrayOf(true, false).minBy { it.toString() })
+            assertEquals(true, booleanArrayOf(true, false).minBy { it.toString().length })
             """
         }
         body(ArraysOfPrimitives, PrimitiveType.Char) {
             """
-            assertEquals('b', charArrayOf('a', 'b').maxBy { "x${"$"}it" })
-            assertEquals('a', charArrayOf('a', 'b').maxBy { "${"$"}it".length })
+            assertEquals('a', charArrayOf('a', 'b').minBy { "x${"$"}it" })
+            assertEquals('b', charArrayOf('b', 'a').minBy { "${"$"}it".length })
             """
         }
     }

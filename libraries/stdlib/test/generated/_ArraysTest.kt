@@ -248,8 +248,8 @@ class _ArraysTest {
         assertEquals(3, arrayOf<Int>(3, 2).minBy { "a" })
         assertEquals(2, arrayOf<Int>(3, 2).minBy { it.toString() })
         assertEquals(3, arrayOf<Int>(2, 3).minBy { -it })
-        assertEquals('b', arrayOf('a', 'b').maxBy { "x$it" })
-        assertEquals("abc", arrayOf("b", "abc").maxBy { it.length })
+        assertEquals('a', arrayOf('a', 'b').minBy { "x$it" })
+        assertEquals("b", arrayOf("b", "abc").minBy { it.length })
     }
 
     @Test
@@ -315,14 +315,14 @@ class _ArraysTest {
 
     @Test
     fun minBy_BooleanArray() {
-        assertEquals(true, booleanArrayOf(true, false).maxBy { it.toString() })
-        assertEquals(false, booleanArrayOf(true, false).maxBy { it.toString().length })
+        assertEquals(false, booleanArrayOf(true, false).minBy { it.toString() })
+        assertEquals(true, booleanArrayOf(true, false).minBy { it.toString().length })
     }
 
     @Test
     fun minBy_CharArray() {
-        assertEquals('b', charArrayOf('a', 'b').maxBy { "x$it" })
-        assertEquals('a', charArrayOf('a', 'b').maxBy { "$it".length })
+        assertEquals('a', charArrayOf('a', 'b').minBy { "x$it" })
+        assertEquals('b', charArrayOf('b', 'a').minBy { "$it".length })
     }
 
     @Test
@@ -1065,200 +1065,238 @@ class _ArraysTest {
 
     @Test
     fun shuffle_Array() {
-        val data = Array(100) { it.toInt() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: Array<*>) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(Array(100) { it.toInt() })
+        test(arrayOf(1, "x", null, Any(), 'a', 2u, 5.0))
     }
 
     @Test
     fun shuffle_ByteArray() {
-        val data = ByteArray(100) { it.toByte() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: ByteArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(ByteArray(100) { it.toByte() })
     }
 
     @Test
     fun shuffle_ShortArray() {
-        val data = ShortArray(100) { it.toShort() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: ShortArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(ShortArray(100) { it.toShort() })
     }
 
     @Test
     fun shuffle_IntArray() {
-        val data = IntArray(100) { it.toInt() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: IntArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(IntArray(100) { it.toInt() })
     }
 
     @Test
     fun shuffle_LongArray() {
-        val data = LongArray(100) { it.toLong() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: LongArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(LongArray(100) { it.toLong() })
     }
 
     @Test
     fun shuffle_FloatArray() {
-        val data = FloatArray(100) { it.toFloat() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: FloatArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(FloatArray(100) { it.toFloat() })
     }
 
     @Test
     fun shuffle_DoubleArray() {
-        val data = DoubleArray(100) { it.toDouble() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: DoubleArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(DoubleArray(100) { it.toDouble() })
     }
 
     @Test
     fun shuffle_BooleanArray() {
-        val data = BooleanArray(100) { it % 2 == 0 }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: BooleanArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(BooleanArray(100) { it % 2 == 0 })
     }
 
     @Test
     fun shuffle_CharArray() {
-        val data = CharArray(100) { it.toChar() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: CharArray) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(CharArray(100) { it.toChar() })
     }
 
     @Test
     fun shuffleRandom_Array() {
-        val data = Array(16) { it.toInt() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: Array<*>) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(Array(16) { it.toInt() })
+        test(arrayOf(1, "x", null, Any(), 'a', 2u, 5.0))
     }
 
     @Test
     fun shuffleRandom_ByteArray() {
-        val data = ByteArray(16) { it.toByte() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: ByteArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(ByteArray(16) { it.toByte() })
     }
 
     @Test
     fun shuffleRandom_ShortArray() {
-        val data = ShortArray(16) { it.toShort() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: ShortArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(ShortArray(16) { it.toShort() })
     }
 
     @Test
     fun shuffleRandom_IntArray() {
-        val data = IntArray(16) { it.toInt() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: IntArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(IntArray(16) { it.toInt() })
     }
 
     @Test
     fun shuffleRandom_LongArray() {
-        val data = LongArray(16) { it.toLong() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: LongArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(LongArray(16) { it.toLong() })
     }
 
     @Test
     fun shuffleRandom_FloatArray() {
-        val data = FloatArray(16) { it.toFloat() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: FloatArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(FloatArray(16) { it.toFloat() })
     }
 
     @Test
     fun shuffleRandom_DoubleArray() {
-        val data = DoubleArray(16) { it.toDouble() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: DoubleArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(DoubleArray(16) { it.toDouble() })
     }
 
     @Test
     fun shuffleRandom_BooleanArray() {
-        val data = BooleanArray(16) { it % 2 == 0 }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: BooleanArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(BooleanArray(16) { it % 2 == 0 })
     }
 
     @Test
     fun shuffleRandom_CharArray() {
-        val data = CharArray(16) { it.toChar() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: CharArray) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(CharArray(16) { it.toChar() })
     }
 
     @Test

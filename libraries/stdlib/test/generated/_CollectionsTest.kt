@@ -55,16 +55,8 @@ class _CollectionsTest {
         assertEquals(3, listOf<Int>(3, 2).minBy { "a" })
         assertEquals(2, listOf<Int>(3, 2).minBy { it.toString() })
         assertEquals(3, listOf<Int>(2, 3).minBy { -it })
-        assertEquals('b', listOf('a', 'b').maxBy { "x$it" })
-        assertEquals("abc", listOf("b", "abc").maxBy { it.length })
-    }
-
-    @Test
-    fun minWith_Iterable() {
-        assertEquals(null, listOf<Int>().minWith(naturalOrder()))
-        assertEquals(1, listOf<Int>(1).minWith(naturalOrder()))
-        assertEquals(4, listOf<Int>(2, 3, 4).minWith(compareBy { it % 4 }))
-        assertEquals("a", listOf("a", "B").minWith(STRING_CASE_INSENSITIVE_ORDER))
+        assertEquals('a', listOf('a', 'b').minBy { "x$it" })
+        assertEquals("b", listOf("b", "abc").minBy { it.length })
     }
 
     @Test
@@ -100,24 +92,30 @@ class _CollectionsTest {
 
     @Test
     fun shuffle_List() {
-        val data = MutableList(100) { it.toInt() }
-        val original = data.toMutableList()
-        data.shuffle()
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        fun test(data: MutableList<*>) {
+            val original = data.toMutableList()
+            data.shuffle()
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(original.groupBy { it }, shuffled.groupBy { it })
+        }
+        test(MutableList(100) { it.toInt() })
+        test(mutableListOf(1, "x", null, Any(), 'a', 2u, 5.0))
     }
 
     @Test
     fun shuffleRandom_List() {
-        val data = MutableList(16) { it.toInt() }
-        val seed = Random.nextInt()
-        val original = data.toMutableList()
-        val originalShuffled = original.shuffled(Random(seed))
-        data.shuffle(Random(seed))
-        val shuffled = data.toMutableList()
-        assertNotEquals(original, shuffled)
-        assertEquals(originalShuffled, shuffled)
+        fun test(data: MutableList<*>) {
+            val seed = Random.nextInt()
+            val original = data.toMutableList()
+            val originalShuffled = original.shuffled(Random(seed))
+            data.shuffle(Random(seed))
+            val shuffled = data.toMutableList()
+            assertNotEquals(original, shuffled)
+            assertEquals(originalShuffled, shuffled)
+        }
+        test(MutableList(16) { it.toInt() })
+        test(mutableListOf(1, "x", null, Any(), 'a', 2u, 5.0))
     }
 
     @Test
