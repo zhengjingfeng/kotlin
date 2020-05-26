@@ -17,8 +17,9 @@ node {
 }
 
 val installV8 by tasks.register<NpxTask>("installV8") {
-    command = "jsvu"
-    setArgs(listOf("v8@8.1.307"))
+    //jsvu@1.11.1 v8@8.1.307 --os=default
+    command = "@1.11.1"
+    setArgs(listOf("v8@8.1.307", "--os=default"))
 }
 
 val antLauncherJar by configurations.creating
