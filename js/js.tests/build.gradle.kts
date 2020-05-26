@@ -19,7 +19,12 @@ node {
 val installV8 by tasks.register<NpxTask>("installV8") {
     //jsvu@1.11.1 v8@8.1.307 --os=default
     command = "jsvu@1.11.1"
-    setArgs(listOf("v8@8.1.307", "--os=default"))
+    val engine = "v8"
+    val version = "8.1.307"
+    val npmPackageName = "$engine@$version"
+    val binaryFileName = "$engine-$version"
+    setArgs(listOf(npmPackageName, "--os=default"))
+    outputs.file(System.getProperty("user.home") + "/" + binaryFileName)
 }
 
 val antLauncherJar by configurations.creating
