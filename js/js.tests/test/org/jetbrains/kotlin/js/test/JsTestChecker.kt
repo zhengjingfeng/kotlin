@@ -74,7 +74,12 @@ abstract class AbstractJsTestChecker {
         run(files) { null }
     }
 
-    abstract fun checkStdout(files: List<String>, expectedResult: String)
+    fun checkStdout(files: List<String>, expectedResult: String) {
+        run(files) {
+            val actualResult = eval(GET_KOTLIN_OUTPUT)
+            Assert.assertEquals(expectedResult, actualResult)
+        }
+    }
 
     protected abstract fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any?
 }
@@ -114,12 +119,6 @@ abstract class AbstractNashornJsTestChecker : AbstractJsTestChecker() {
             files.forEach { loadFile(it) }
             f()
         }
-    }
-
-    override fun checkStdout(files: List<String>, expectedResult: String) {
-        run(files)
-        val actualResult = engine.eval(GET_KOTLIN_OUTPUT)
-        Assert.assertEquals(expectedResult, actualResult)
     }
 
     protected abstract val preloadedScripts: List<String>
@@ -166,13 +165,6 @@ class NashornIrJsTestChecker : AbstractNashornJsTestChecker() {
 
 abstract class AbstractV8JsTestChecker : AbstractJsTestChecker() {
     protected abstract val engine: ScriptEngineV8
-
-    override fun checkStdout(files: List<String>, expectedResult: String) {
-        run(files) {
-            val actualResult = engine.eval(GET_KOTLIN_OUTPUT)
-            Assert.assertEquals(expectedResult, actualResult)
-        }
-    }
 }
 
 object V8JsTestChecker : AbstractV8JsTestChecker() {
@@ -232,17 +224,17 @@ object V8IrJsTestChecker : AbstractV8JsTestChecker() {
 }
 
 object MyIrJsTestChecker : AbstractJsTestChecker() {
-    val vm = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8-8.1.307"))
+    private val engine = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8-8.1.307"))
 
     override fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any? {
-        vm.saveState()
+        engine.saveState()
 
         val v = try {
-            files.forEach { vm.loadFile(it) }
-            vm.f()
+            files.forEach { engine.loadFile(it) }
+            engine.f()
         } catch (t: Throwable) {
             try {
-                vm.restoreState()
+                engine.restoreState()
 //                vm.release()
             } finally {
                 // Don't mask the original exception
@@ -250,13 +242,36 @@ object MyIrJsTestChecker : AbstractJsTestChecker() {
             }
         }
 
-        vm.restoreState()
+        engine.restoreState()
 //        vm.release()
 
         return v
     }
+}
 
-    override fun checkStdout(files: List<String>, expectedResult: String) {
-        TODO()
+object MyJsTestChecker : AbstractJsTestChecker() {
+    private val tlVm = object : ThreadLocal<ScriptEngine>() {
+        override fun initialValue() =
+            SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8-8.1.307")).apply {
+                listOf(
+                    BasicBoxTest.DIST_DIR_JS_PATH + "kotlin.js",
+                    BasicBoxTest.DIST_DIR_JS_PATH + "kotlin-test.js"
+                ).forEach { loadFile(it) }
+
+                overrideAsserter()
+            }
+        override fun remove() {
+            get().release()
+        }
+    }
+
+    private val engine get() = tlVm.get()
+
+    override fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any? {
+        engine.eval(SETUP_KOTLIN_OUTPUT)
+        return engine.runAndRestoreContext {
+            files.forEach { loadFile(it) }
+            f()
+        }
     }
 }

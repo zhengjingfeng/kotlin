@@ -95,7 +95,12 @@ abstract class BasicBoxTest(
 
     protected open val incrementalCompilationChecksEnabled = true
 
-    protected open val testChecker get() = if (runTestInNashorn) NashornJsTestChecker else V8JsTestChecker
+    protected open val testChecker
+        get() = when {
+            runTestInNashorn -> NashornJsTestChecker
+            runTestInJ2V8 -> V8JsTestChecker
+            else -> MyJsTestChecker
+        }
 
     fun doTest(filePath: String) {
         doTest(filePath, "OK", MainCallParameters.noCall())
