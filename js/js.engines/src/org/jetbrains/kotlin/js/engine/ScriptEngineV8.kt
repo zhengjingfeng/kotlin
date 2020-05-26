@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -12,10 +12,6 @@ import com.eclipsesource.v8.utils.V8ObjectUtils
 import java.io.File
 
 class ScriptEngineV8(LIBRARY_PATH_BASE: String) : ScriptEngine {
-
-    override fun <T> releaseObject(t: T) {
-        (t as? V8Object)?.release()
-    }
 
     private var savedState: List<String>? = null
 
@@ -33,7 +29,7 @@ class ScriptEngineV8(LIBRARY_PATH_BASE: String) : ScriptEngine {
     }
 
     private fun getGlobalPropertyNames(): List<String> {
-        val v8Array = eval<V8Array>("Object.getOwnPropertyNames(this)")
+        val v8Array = evaluate<V8Array>("Object.getOwnPropertyNames(this)")
         @Suppress("UNCHECKED_CAST") val javaArray = V8ObjectUtils.toList(v8Array) as List<String>
         v8Array.release()
         return javaArray
@@ -47,25 +43,15 @@ class ScriptEngineV8(LIBRARY_PATH_BASE: String) : ScriptEngine {
 
     private val myRuntime: V8 = V8.createV8Runtime("global", LIBRARY_PATH_BASE)
 
+    override fun eval(script: String): String = evaluate(script)
+
     @Suppress("UNCHECKED_CAST")
-    override fun <T> eval(script: String): T {
+    private fun <T> evaluate(script: String): T {
         return myRuntime.executeScript(script) as T
     }
 
     override fun evalVoid(script: String) {
         return myRuntime.executeVoidScript(script)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T> callMethod(obj: Any, name: String, vararg args: Any?): T {
-        if (obj !is V8Object) {
-            throw Exception("InteropV8 can deal only with V8Object")
-        }
-
-        val runtimeArray = V8Array(myRuntime)
-        val result = obj.executeFunction(name, runtimeArray) as T
-        runtimeArray.release()
-        return result
     }
 
     override fun loadFile(path: String) {
@@ -78,19 +64,15 @@ class ScriptEngineV8(LIBRARY_PATH_BASE: String) : ScriptEngine {
 }
 
 class ScriptEngineV8Lazy(LIBRARY_PATH_BASE: String) : ScriptEngine {
-    override fun <T> eval(script: String) = engine.eval<T>(script)
+    override fun eval(script: String) = engine.eval(script)
 
     override fun saveState() = engine.saveState()
 
     override fun evalVoid(script: String) = engine.evalVoid(script)
 
-    override fun <T> callMethod(obj: Any, name: String, vararg args: Any?) = engine.callMethod<T>(obj, name, args)
-
     override fun loadFile(path: String) = engine.loadFile(path)
 
     override fun release() = engine.release()
-
-    override fun <T> releaseObject(t: T) = engine.releaseObject(t)
 
     override fun restoreState() = engine.restoreState()
 

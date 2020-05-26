@@ -7,55 +7,32 @@ package org.jetbrains.kotlin.js.engine
 
 import java.io.File
 
-fun main() {
-    val s = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8"))
-    do {
-        print(">>> ")
-        val t = readLine()
-
-        if (t != null && t != "exit") {
-            println(s.eval<String>(t))
-        }
-    } while (t != "exit")
-}
-
 class SimpleProcessBasedScriptEngine(
     private val vmExecFile: File
 ) : ScriptEngine {
 
     private var process: Process? = null
-
     private val buffer = ByteArray(1024)
 
-    override fun <T> eval(script: String): T {
-//        val t1 = System.currentTimeMillis()
+    override fun eval(script: String): String {
         val vm = getVM()
-//        println("$$$ vm t = " + (System.currentTimeMillis() - t1))
 
-        val stdinStream = vm.outputStream
-        val stdoutStream = vm.inputStream
-        val stderrStream = vm.errorStream
+        val stdin = vm.outputStream
+        val stdout = vm.inputStream
+        val stderr = vm.errorStream
 
-        val writer = stdinStream.writer()
+        val writer = stdin.writer()
         writer.write(script.replace("\n", "\\n") + "\n")
         writer.flush()
 
         val sb = StringBuilder()
 
-        var first = true
-
         val END = "\n<END>\n"
         while (vm.isAlive) {
-            val n = stdoutStream.available()
+            val n = stdout.available()
             if (n == 0) continue
 
-            val count = stdoutStream.read(buffer)
-
-            if (first) {
-                first = false
-//                println("$$$ ready t = " + (System.currentTimeMillis() - t1))
-            }
-
+            val count = stdout.read(buffer)
 
             val s = String(buffer, 0, count)
             sb.append(s)
@@ -78,19 +55,8 @@ class SimpleProcessBasedScriptEngine(
         return sb.removeSuffix(END).toString()
     }
 
-    override fun evalVoid(script: String) {
-        val result = eval<String>(script)
-        if (result != "undefined") {
-            error(result)
-        }
-    }
-
-    override fun <T> callMethod(obj: Any, name: String, vararg args: Any?): T {
-        TODO()
-    }
-
     override fun loadFile(path: String) {
-        evalVoid("load('$path')")
+        eval("load('$path')")
     }
 
     override fun release() {
@@ -98,24 +64,18 @@ class SimpleProcessBasedScriptEngine(
         process = null
     }
 
-    override fun <T> releaseObject(t: T) {
-        TODO()
-    }
-
     override fun saveState() {
-        evalVoid("saveState();")
+        eval("saveState();")
     }
 
     override fun restoreState() {
-        evalVoid("restoreState();")
+        eval("restoreState();")
     }
 
     private fun getVM(): Process {
         val p = process
 
         if (p != null && p.isAlive) return p
-
-//        println("starting new process")
 
         process = null
 
@@ -156,3 +116,15 @@ quit         +    +    +
 //    //
 //}
 //
+
+fun main() {
+    val s = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8"))
+    do {
+        print(">>> ")
+        val t = readLine()
+
+        if (t != null && t != "exit") {
+            println(s.eval(t))
+        }
+    } while (t != "exit")
+}

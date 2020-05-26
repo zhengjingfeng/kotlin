@@ -778,7 +778,7 @@ abstract class BasicBoxTest(
         val result = engineForMinifier.runAndRestoreContext {
             runList.forEach(this::loadFile)
             overrideAsserter()
-            eval<String>(SETUP_KOTLIN_OUTPUT)
+            eval(SETUP_KOTLIN_OUTPUT)
             runTestFunction(testModuleName, testPackage, testFunction, withModuleSystem)
         }
         TestCase.assertEquals(expectedResult, result)

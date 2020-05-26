@@ -18,7 +18,7 @@ fun createScriptEngine(): ScriptEngine {
 }
 
 fun ScriptEngine.overrideAsserter() {
-    evalVoid("this['kotlin-test'].kotlin.test.overrideAsserter_wbnzx$(this['kotlin-test'].kotlin.test.DefaultAsserter);")
+    eval("this['kotlin-test'].kotlin.test.overrideAsserter_wbnzx$(this['kotlin-test'].kotlin.test.DefaultAsserter);")
 }
 
 fun ScriptEngine.runTestFunction(
@@ -39,7 +39,7 @@ fun ScriptEngine.runTestFunction(
 
     script += ".$testFunctionName()"
 
-    return eval<String>(script)
+    return eval(script)
 //    val testPackage = eval<Any>(script)
 //    return callMethod<String?>(testPackage, testFunctionName).also {
 //        releaseObject(testPackage)
@@ -118,7 +118,7 @@ abstract class AbstractNashornJsTestChecker : AbstractJsTestChecker() {
 
     override fun checkStdout(files: List<String>, expectedResult: String) {
         run(files)
-        val actualResult = engine.eval<String>(GET_KOTLIN_OUTPUT)
+        val actualResult = engine.eval(GET_KOTLIN_OUTPUT)
         Assert.assertEquals(expectedResult, actualResult)
     }
 
@@ -139,7 +139,7 @@ const val GET_KOTLIN_OUTPUT = "kotlin.kotlin.io.output.buffer;"
 object NashornJsTestChecker : AbstractNashornJsTestChecker() {
 
     override fun beforeRun() {
-        engine.evalVoid(SETUP_KOTLIN_OUTPUT)
+        engine.eval(SETUP_KOTLIN_OUTPUT)
     }
 
     override val preloadedScripts = listOf(
@@ -169,7 +169,7 @@ abstract class AbstractV8JsTestChecker : AbstractJsTestChecker() {
 
     override fun checkStdout(files: List<String>, expectedResult: String) {
         run(files) {
-            val actualResult = engine.eval<String>(GET_KOTLIN_OUTPUT)
+            val actualResult = engine.eval(GET_KOTLIN_OUTPUT)
             Assert.assertEquals(expectedResult, actualResult)
         }
     }
