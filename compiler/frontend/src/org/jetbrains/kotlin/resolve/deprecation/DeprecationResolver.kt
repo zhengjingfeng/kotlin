@@ -32,6 +32,8 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeUtils
 import org.jetbrains.kotlin.utils.SmartList
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
+import com.google.common.collect.*
+import java.util.concurrent.ConcurrentMap
 
 class DeprecationResolver(
     storageManager: StorageManager,
@@ -39,18 +41,24 @@ class DeprecationResolver(
     private val coroutineCompatibilitySupport: CoroutineCompatibilitySupport,
     private val deprecationSettings: DeprecationSettings
 ) {
-    private val deprecations = storageManager.createMemoizedFunction { descriptor: DeclarationDescriptor ->
-        val deprecations = descriptor.getOwnDeprecations()
-        when {
-            deprecations.isNotEmpty() -> deprecations
-            descriptor is CallableMemberDescriptor -> listOfNotNull(deprecationByOverridden(descriptor))
-            else -> emptyList()
-        }
-    }
+    private val deprecations = storageManager.createMemoizedFunction(
+        { descriptor: DeclarationDescriptor ->
+            val deprecations = descriptor.getOwnDeprecations()
+            when {
+                deprecations.isNotEmpty() -> deprecations
+                descriptor is CallableMemberDescriptor -> listOfNotNull(deprecationByOverridden(descriptor))
+                else -> emptyList()
+            }
+        },
+        newConcurrentHashMapWithWeakKeys()
+    )
 
-    private val isHiddenBecauseOfKotlinVersionAccessibility = storageManager.createMemoizedFunction { descriptor: DeclarationDescriptor ->
-        descriptor.checkSinceKotlinVersionAccessibility(languageVersionSettings)
-    }
+    private val isHiddenBecauseOfKotlinVersionAccessibility = storageManager.createMemoizedFunction(
+        { descriptor: DeclarationDescriptor ->
+            descriptor.checkSinceKotlinVersionAccessibility(languageVersionSettings)
+        },
+        newConcurrentHashMapWithWeakKeys()
+    )
 
     fun getDeprecations(descriptor: DeclarationDescriptor): List<Deprecation> =
         deprecations(descriptor.original)
@@ -275,3 +283,6 @@ class DeprecationResolver(
         private val JAVA_DEPRECATED = FqName("java.lang.Deprecated")
     }
 }
+
+private fun <K, V> newConcurrentHashMapWithWeakKeys(): ConcurrentMap<K, V> =
+    MapMaker().concurrencyLevel(2).initialCapacity(3).weakKeys().makeMap()
