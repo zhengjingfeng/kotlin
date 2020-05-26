@@ -932,6 +932,8 @@ abstract class BasicBoxTest(
 
         @JvmStatic
         protected val runTestInNashorn = getBoolean("kotlin.js.useNashorn")
+        @JvmStatic
+        protected val runTestInJ2V8 = getBoolean("kotlin.js.useJ2V8")
 
         val TEST_MODULE = "JS_TESTS"
         private val DEFAULT_MODULE = "main"

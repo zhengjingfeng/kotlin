@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -8,8 +8,10 @@ package org.jetbrains.kotlin.js.test
 import org.jetbrains.kotlin.js.engine.ScriptEngine
 import org.jetbrains.kotlin.js.engine.ScriptEngineNashorn
 import org.jetbrains.kotlin.js.engine.ScriptEngineV8
+import org.jetbrains.kotlin.js.engine.SimpleProcessBasedScriptEngine
 import org.jetbrains.kotlin.test.KotlinTestUtils
 import org.junit.Assert
+import java.io.File
 
 fun createScriptEngine(): ScriptEngine {
     return ScriptEngineNashorn()
@@ -35,10 +37,13 @@ fun ScriptEngine.runTestFunction(
         script += ".$testPackageName"
     }
 
-    val testPackage = eval<Any>(script)
-    return callMethod<String?>(testPackage, testFunctionName).also {
-        releaseObject(testPackage)
-    }
+    script += ".$testFunctionName()"
+
+    return eval<String>(script)
+//    val testPackage = eval<Any>(script)
+//    return callMethod<String?>(testPackage, testFunctionName).also {
+//        releaseObject(testPackage)
+//    }
 }
 
 abstract class AbstractJsTestChecker {
@@ -223,5 +228,35 @@ object V8IrJsTestChecker : AbstractV8JsTestChecker() {
         v8.release()
 
         return v
+    }
+}
+
+object MyIrJsTestChecker : AbstractJsTestChecker() {
+    val vm = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8"))
+
+    override fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any? {
+        vm.saveState()
+
+        val v = try {
+            files.forEach { vm.loadFile(it) }
+            vm.f()
+        } catch (t: Throwable) {
+            try {
+                vm.restoreState()
+//                vm.release()
+            } finally {
+                // Don't mask the original exception
+                throw t
+            }
+        }
+
+        vm.restoreState()
+//        vm.release()
+
+        return v
+    }
+
+    override fun checkStdout(files: List<String>, expectedResult: String) {
+        TODO()
     }
 }

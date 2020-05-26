@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -68,7 +68,12 @@ abstract class BasicIrBoxTest(
         super.doTest(filePath, expectedResult, mainCallParameters, coroutinesPackage)
     }
 
-    override val testChecker get() = if (runTestInNashorn) NashornIrJsTestChecker() else V8IrJsTestChecker
+    override val testChecker
+        get() = when {
+            runTestInNashorn -> NashornIrJsTestChecker()
+            runTestInJ2V8 -> V8IrJsTestChecker
+            else -> MyIrJsTestChecker
+        }
 
     @Suppress("ConstantConditionIf")
     override fun translateFiles(
