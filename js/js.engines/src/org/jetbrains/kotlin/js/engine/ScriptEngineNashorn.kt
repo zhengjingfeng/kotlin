@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.js.engine
 
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory
 import jdk.nashorn.internal.runtime.ScriptRuntime
-import javax.script.Invocable
 
 class ScriptEngineNashorn : ScriptEngineEx {
     private var savedState: Map<String, Any?>? = null
@@ -15,7 +14,7 @@ class ScriptEngineNashorn : ScriptEngineEx {
     // TODO use "-strict"
     private val myEngine = NashornScriptEngineFactory().getScriptEngine("--language=es5", "--no-java", "--no-syntax-extensions")
 
-    override fun eval(script: String): String = evaluate(script)
+    override fun eval(script: String): String = evaluate<Any?>(script).toString()
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> evaluate(script: String): T {
