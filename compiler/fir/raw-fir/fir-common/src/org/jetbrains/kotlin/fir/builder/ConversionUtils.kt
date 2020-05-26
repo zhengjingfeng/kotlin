@@ -311,7 +311,7 @@ fun FirPropertyBuilder.generateAccessorsByDelegate(
     }
     val ownerSymbol = when (ownerClassBuilder) {
         is FirAnonymousObjectBuilder -> ownerClassBuilder.symbol
-        is AbstractFirRegularClassBuilder -> ownerClassBuilder.symbol
+        is FirRegularClassBuilder -> ownerClassBuilder.symbol
         else -> null
     }
     val isMember = ownerSymbol != null
@@ -324,7 +324,7 @@ fun FirPropertyBuilder.generateAccessorsByDelegate(
                     boundSymbol = ownerSymbol
                 }
                 typeRef = buildResolvedTypeRef {
-                    val typeParameterNumber = (ownerClassBuilder as? AbstractFirRegularClassBuilder)?.typeParameters?.size ?: 0
+                    val typeParameterNumber = (ownerClassBuilder as? FirRegularClassBuilder)?.typeParameters?.size ?: 0
                     type = ownerSymbol.constructStarProjectedType(typeParameterNumber)
                 }
             }
