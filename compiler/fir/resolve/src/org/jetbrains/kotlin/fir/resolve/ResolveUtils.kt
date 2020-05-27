@@ -11,10 +11,7 @@ import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.diagnostics.ConeStubDiagnostic
-import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccess
-import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression
-import org.jetbrains.kotlin.fir.expressions.FirResolvable
-import org.jetbrains.kotlin.fir.expressions.FirResolvedQualifier
+import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.expressions.builder.FirResolvedReifiedParameterReferenceBuilder
 import org.jetbrains.kotlin.fir.expressions.builder.buildExpressionWithSmartcast
 import org.jetbrains.kotlin.fir.expressions.builder.buildResolvedQualifier
@@ -433,3 +430,25 @@ fun CallableId.isIteratorHasNext() =
 
 fun CallableId.isIterator() =
     callableName.asString() == "iterator" && packageName.asString() == "kotlin.collections"
+
+fun FirCheckedSafeCallSubject.propagateTypeFromOriginalReceiver(nullableReceiverExpression: FirExpression) {
+    val receiverType = nullableReceiverExpression.typeRef.coneTypeSafe<ConeKotlinType>() ?: return
+    replaceTypeRef(typeRef.resolvedTypeFromPrototype(receiverType.makeConeTypeDefinitelyNotNullOrNotNull()))
+}
+
+fun FirSafeCallExpression.propagateTypeFromQualifiedAccessAfterNullCheck(
+    nullableReceiverExpression: FirExpression,
+    session: FirSession,
+) {
+    val receiverType = nullableReceiverExpression.typeRef.coneTypeSafe<ConeKotlinType>()
+    val typeAfterNullCheck = (regularQualifiedAccess as? FirExpression)?.typeRef?.coneTypeSafe<ConeKotlinType>() ?: return
+    val isReceiverActuallyNullable = receiverType != null && session.inferenceContext.run { receiverType.isNullableType() }
+
+    val resultingType =
+        if (isReceiverActuallyNullable)
+            typeAfterNullCheck.withNullability(ConeNullability.NULLABLE, session.inferenceContext)
+        else
+            typeAfterNullCheck
+
+    replaceTypeRef(typeRef.resolvedTypeFromPrototype(resultingType))
+}

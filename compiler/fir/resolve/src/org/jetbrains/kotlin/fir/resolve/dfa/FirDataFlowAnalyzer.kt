@@ -582,13 +582,15 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
 
     // ----------------------------------- Resolvable call -----------------------------------
 
-    fun enterQualifiedAccessExpression(qualifiedAccessExpression: FirQualifiedAccessExpression) {
-        enterSafeCall(qualifiedAccessExpression)
+    fun enterQualifiedAccessExpression(qualifiedAccessExpression: FirQualifiedAccessExpression) {}
+
+    fun exitQualifiedAccessExpression(qualifiedAccessExpression: FirQualifiedAccessExpression) {
+        graphBuilder.exitQualifiedAccessExpression(qualifiedAccessExpression).mergeIncomingFlow()
+        processConditionalContract(qualifiedAccessExpression)
     }
 
-    private fun enterSafeCall(qualifiedAccess: FirQualifiedAccess) {
-        if (!qualifiedAccess.safe) return
-        val node = graphBuilder.enterSafeCall(qualifiedAccess).mergeIncomingFlow()
+    fun enterSafeCallAfterNullCheck(safeCall: FirSafeCallExpression) {
+        val node = graphBuilder.enterSafeCall(safeCall).mergeIncomingFlow()
         val previousNode = node.firstPreviousNode
         val shouldFork: Boolean
         var flow = if (previousNode is ExitSafeCallNode) {
@@ -598,7 +600,8 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
             shouldFork = true
             node.flow
         }
-        qualifiedAccess.explicitReceiver?.let { receiver ->
+
+        safeCall.receiver.let { receiver ->
             val type = receiver.coneType
                 ?.takeIf { it.isMarkedNullable }
                 ?.withNullability(ConeNullability.NOT_NULL)
@@ -611,6 +614,7 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
                 }
                 flow.addTypeStatement(variable typeEq type)
             }
+
             flow = logicSystem.approveStatementsInsideFlow(
                 flow,
                 variable notEq null,
@@ -622,10 +626,61 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
         node.flow = flow
     }
 
-    fun exitQualifiedAccessExpression(qualifiedAccessExpression: FirQualifiedAccessExpression) {
-        graphBuilder.exitQualifiedAccessExpression(qualifiedAccessExpression).mergeIncomingFlow()
-        processConditionalContract(qualifiedAccessExpression)
-        exitSafeCall(qualifiedAccessExpression)
+    fun exitSafeCall(safeCall: FirSafeCallExpression) {
+        val node = graphBuilder.exitSafeCall(safeCall).mergeIncomingFlow()
+        val previousFlow = node.previousFlow
+
+        val variable = variableStorage.getOrCreateVariable(previousFlow, safeCall)
+        val receiverVariable = when (variable) {
+            // There is some bug with invokes. See KT-36014
+            is RealVariable -> variable.explicitReceiverVariable ?: return
+            is SyntheticVariable -> variableStorage.getOrCreateVariable(previousFlow, safeCall.receiver)
+        }
+        logicSystem.addImplication(node.flow, (variable notEq null) implies (receiverVariable notEq null))
+        if (receiverVariable.isReal()) {
+            logicSystem.addImplication(node.flow, (variable notEq null) implies (receiverVariable typeEq any))
+        }
+    }
+
+//    fun exitSafeCall(safeCall: FirSafeCallExpression) {
+//        val node = graphBuilder.exitSafeCall(safeCall).mergeIncomingFlow()
+//        val previousFlow = node.previousFlow
+//
+//        val variableForTheWholeSafeCallExpression = variableStorage.getOrCreateVariable(previousFlow, safeCall)
+//        val receiverVariableAsIs = variableStorage.getOrCreateVariable(previousFlow, safeCall.receiver)
+//
+//        // Let we have a safe-call like x?.y desugared like x?.{ $subj$.y }
+//        // And a?.b?.c desugared like (a?.{ $subj$.b }?.{ $subj$.c }
+//
+//        // x?.{ $subj$.y } != null => x != null
+//        // a?.{ $subj$.b }?.{ $subj$.c } != null => a?.{ $subj$.b } != null
+//        logicSystem.addImplication(node.flow, (variableForTheWholeSafeCallExpression notEq null) implies (receiverVariableAsIs notEq null))
+//
+//        // x?.{ $subj$.y } != null => x is Any [i.e, has not nullable type]
+//        // a?.{ $subj$.b }?.{ $subj$.c } != null => a.b is Any [i.e, has not nullable type]
+//        // TODO: Looks like it's redundant as it can be replaced with combination of first and the third rules
+//        safeCall.realVariableForReceiverWithUnwrapping(node.flow)?.let { realReceiverVariable ->
+//            logicSystem.addImplication(
+//                node.flow,
+//                (variableForTheWholeSafeCallExpression notEq null) implies (realReceiverVariable typeEq any)
+//            )
+//        }
+//
+//        // x?.{ $subj$.y } != null => x.y is Any [i.e, has not nullable type]
+//        // a?.{ $subj$.b }?.{ $subj$.c } != null => a.b.c is Any [i.e, != null]
+//        val variableForQualifierAfterNotNullCheck = variableStorage.getOrCreateVariable(
+//            previousFlow, safeCall.regularQualifiedAccess
+//        )
+//        if (variableForQualifierAfterNotNullCheck.isReal()) {
+//            logicSystem.addImplication(
+//                node.flow,
+//                (variableForTheWholeSafeCallExpression notEq null) implies (variableForQualifierAfterNotNullCheck typeEq any)
+//            )
+//        }
+//    }
+
+    private fun FirSafeCallExpression.realVariableForReceiverWithUnwrapping(flow: FLOW): RealVariable? {
+        return variableStorage.getOrCreateVariable(flow, receiver) as? RealVariable
     }
 
     fun exitResolvedQualifierNode(resolvedQualifier: FirResolvedQualifier) {
@@ -644,7 +699,6 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
             exitBooleanNot(functionCall, functionCallNode)
         }
         processConditionalContract(functionCall)
-        exitSafeCall(functionCall)
     }
 
     fun exitDelegatedConstructorCall(call: FirDelegatedConstructorCall, callCompleted: Boolean) {
@@ -660,21 +714,10 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
         }
     }
 
-    private fun exitSafeCall(qualifiedAccess: FirQualifiedAccess) {
-        if (!qualifiedAccess.safe) return
-        val node = graphBuilder.exitSafeCall(qualifiedAccess).mergeIncomingFlow()
-        val previousFlow = node.previousFlow
-        val variable = variableStorage.getOrCreateVariable(previousFlow, qualifiedAccess)
-        val receiverVariable = when (variable) {
-            // There is some bug with invokes. See KT-36014
-            is RealVariable -> variable.explicitReceiverVariable ?: return
-            is SyntheticVariable -> variableStorage.getOrCreateVariable(previousFlow, qualifiedAccess.explicitReceiver!!)
-        }
-        logicSystem.addImplication(node.flow, (variable notEq null) implies (receiverVariable notEq null))
-        if (receiverVariable.isReal()) {
-            logicSystem.addImplication(node.flow, (variable notEq null) implies (receiverVariable typeEq any))
-        }
-    }
+//    private fun exitSafeCall(qualifiedAccess: FirQualifiedAccess) {
+//        if (!qualifiedAccess.safe) return
+//
+//    }
 
     private fun processConditionalContract(qualifiedAccess: FirQualifiedAccess) {
         val owner: FirContractDescriptionOwner? = when (qualifiedAccess) {

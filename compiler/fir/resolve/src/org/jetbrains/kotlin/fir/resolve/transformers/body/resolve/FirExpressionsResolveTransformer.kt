@@ -155,6 +155,34 @@ class FirExpressionsResolveTransformer(transformer: FirBodyResolveTransformer) :
         return result.compose()
     }
 
+    override fun transformSafeCallExpression(
+        safeCallExpression: FirSafeCallExpression,
+        data: ResolutionMode
+    ): CompositeTransformResult<FirStatement> {
+        val receiver =
+            safeCallExpression.receiver.transform<FirExpression, ResolutionMode>(this, ResolutionMode.ContextIndependent).single
+
+        dataFlowAnalyzer.enterSafeCallAfterNullCheck(safeCallExpression)
+
+        safeCallExpression.checkedSubject.propagateTypeFromOriginalReceiver(receiver)
+
+        val transformed = safeCallExpression.regularQualifiedAccess.transform<FirQualifiedAccess, ResolutionMode>(this, data).single
+        safeCallExpression.replaceRegularQualifiedAccess(transformed)
+
+        safeCallExpression.propagateTypeFromQualifiedAccessAfterNullCheck(receiver, session)
+
+        dataFlowAnalyzer.exitSafeCall(safeCallExpression)
+
+        return safeCallExpression.compose()
+    }
+
+    override fun transformCheckedSafeCallSubject(
+        checkedSafeCallSubject: FirCheckedSafeCallSubject,
+        data: ResolutionMode
+    ): CompositeTransformResult<FirStatement> {
+        return checkedSafeCallSubject.compose()
+    }
+
     override fun transformFunctionCall(functionCall: FirFunctionCall, data: ResolutionMode): CompositeTransformResult<FirStatement> {
         if (functionCall.calleeReference is FirResolvedNamedReference && functionCall.resultType is FirImplicitTypeRef) {
             storeTypeFromCallee(functionCall)
