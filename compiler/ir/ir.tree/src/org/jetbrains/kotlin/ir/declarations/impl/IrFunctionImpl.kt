@@ -10,6 +10,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.carriers.FunctionCarrier
+import org.jetbrains.kotlin.ir.descriptors.WrappedSimpleFunctionDescriptor
 import org.jetbrains.kotlin.ir.symbols.IrPropertySymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
@@ -21,7 +22,6 @@ abstract class IrFunctionCommonImpl(
     startOffset: Int,
     endOffset: Int,
     origin: IrDeclarationOrigin,
-    override val symbol: IrSimpleFunctionSymbol,
     name: Name,
     visibility: Visibility,
     override val modality: Modality,
@@ -90,7 +90,7 @@ class IrFunctionImpl(
     override val isOperator: Boolean = symbol.descriptor.isOperator,
     isExpect: Boolean = symbol.descriptor.isExpect,
     override val isFakeOverride: Boolean = origin == IrDeclarationOrigin.FAKE_OVERRIDE
-) : IrFunctionCommonImpl(startOffset, endOffset, origin, symbol, name, visibility, modality, returnType, isInline,
+) : IrFunctionCommonImpl(startOffset, endOffset, origin, name, visibility, modality, returnType, isInline,
     isExternal, isTailrec, isSuspend, isOperator, isExpect, isFakeOverride) {
 
     constructor(
@@ -142,7 +142,6 @@ class IrFakeOverrideFunctionImpl(
     startOffset: Int,
     endOffset: Int,
     origin: IrDeclarationOrigin,
-    override var symbol: IrSimpleFunctionSymbol,
     name: Name,
     visibility: Visibility,
     modality: Modality,
@@ -153,13 +152,23 @@ class IrFakeOverrideFunctionImpl(
     isSuspend: Boolean,
     isOperator: Boolean,
     isExpect: Boolean
-) : IrFunctionCommonImpl(startOffset, endOffset, origin, symbol, name, visibility, modality, returnType, isInline,
+) : IrFunctionCommonImpl(startOffset, endOffset, origin, name, visibility, modality, returnType, isInline,
     isExternal, isTailrec, isSuspend, isOperator, isExpect,
     isFakeOverride = true),
     IrFakeOverrideFunction
 {
-    override val descriptor: FunctionDescriptor = symbol.descriptor
-    init {
+    private var _symbol: IrSimpleFunctionSymbol? = null
+
+    override val symbol: IrSimpleFunctionSymbol
+        get() = _symbol ?: error("$this has not acquired a symbol yet")
+
+    override val descriptor =
+        _symbol?.descriptor ?: WrappedSimpleFunctionDescriptor()
+
+    override fun acquireSymbol(symbol: IrSimpleFunctionSymbol) {
+        assert(_symbol == null) { "$this already has symbol _symbol" }
+        _symbol = symbol
         symbol.bind(this)
+        (symbol.descriptor as? WrappedSimpleFunctionDescriptor)?.bind(this)
     }
 }
