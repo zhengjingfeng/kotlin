@@ -51,4 +51,27 @@ class AHeavyInspectionsPerformanceTest : UsefulTestCase() {
             }
         }
     }
+
+    fun testSingleInspection() {
+        suite {
+            config.warmup = 0
+            config.iterations = 1
+            app {
+                project(ExternalProject.KOTLIN_AUTO) {
+                    for (inspection in listOfInspections.sliceArray(0..1)) {
+                        enableSingleInspection(inspection)
+                        for (file in listOfFiles.sliceArray(0..1)) {
+                            val editorFile = editor(file)
+
+                            measure<List<HighlightInfo>>(inspection, file.lastPathSegment()) {
+                                test = {
+                                    highlight(editorFile)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
