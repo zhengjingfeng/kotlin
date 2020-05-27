@@ -229,23 +229,23 @@ object MyIrJsTestChecker : AbstractJsTestChecker() {
     private val engine = SimpleProcessBasedScriptEngine(File(System.getProperty("user.home") + "/.jsvu/v8-8.1.307"))
 
     override fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any? {
-        engine.saveState()
+//        engine.saveState()
 
         val v = try {
             files.forEach { engine.loadFile(it) }
             engine.f()
         } catch (t: Throwable) {
             try {
-                engine.restoreState()
-//                vm.release()
+//                engine.restoreState()
+                engine.release()
             } finally {
                 // Don't mask the original exception
                 throw t
             }
         }
 
-        engine.restoreState()
-//        vm.release()
+//        engine.restoreState()
+        engine.release()
 
         return v
     }
