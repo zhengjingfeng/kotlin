@@ -22,7 +22,7 @@ val installV8 by tasks.register<NpxTask>("installV8") {
     val engine = "v8"
     val version = "8.1.307"
     val npmPackageName = "$engine@$version"
-    val binaryFileName = "$engine-$version"
+    val binaryFileName = "$engine-$version" + if (OperatingSystem.current().isWindows) ".cmd" else ""
 
     command = "jsvu@$jsvuVersion"
     setArgs(listOf(npmPackageName, "--os=default"))

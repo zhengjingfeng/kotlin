@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.js.engine
 import java.io.File
 
 private val isWindows = "win" in System.getProperty("os.name").toLowerCase()
+private val LINE_SEPARATOR = System.getProperty("line.separator")!!
 
 class SimpleProcessBasedScriptEngine(
     private val vmExecFile: File
@@ -29,7 +30,7 @@ class SimpleProcessBasedScriptEngine(
 
         val out = StringBuilder()
 
-        val END = "<END>\n"
+        val END = "<END>$LINE_SEPARATOR"
         while (vm.isAlive) {
             val n = stdout.available()
             if (n == 0) continue
@@ -81,14 +82,7 @@ class SimpleProcessBasedScriptEngine(
 
         process = null
 
-        val executablePath =
-            if (isWindows) {
-                val extensions = sequenceOf("", ".exe", ".cmd", ".bat")
-
-                extensions.map { vmExecFile.absolutePath + it }.find { File(it).exists() }
-            } else {
-                vmExecFile.absolutePath
-            }
+        val executablePath = vmExecFile.absolutePath + if (isWindows) ".cmd" else ""
 
         val builder = ProcessBuilder(
             executablePath,
