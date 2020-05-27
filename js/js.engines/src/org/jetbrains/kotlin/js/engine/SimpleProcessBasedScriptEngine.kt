@@ -59,7 +59,7 @@ class SimpleProcessBasedScriptEngine(
     }
 
     override fun loadFile(path: String) {
-        eval("load('$path')")
+        eval("load('${path.replace('\\', '/')}');")
     }
 
     override fun release() {
