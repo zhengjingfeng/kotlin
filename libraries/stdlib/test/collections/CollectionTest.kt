@@ -973,16 +973,16 @@ class CollectionTest {
     }
 
     @Test fun sumOf() {
-        assertEquals(0, emptyList<Nothing>().sumOf { 1 })
+        assertEquals(0, emptyList<Nothing>().sumOf { 1.toInt() })
         assertEquals(0L, emptyList<Nothing>().sumOf { 1L })
-        assertEquals(0U, emptyList<Nothing>().sumOf { 1U })
+        assertEquals(0U, emptyList<Nothing>().sumOf { 1U.toUInt() })
         assertEquals(0UL, emptyList<Nothing>().sumOf { 1UL })
         assertEquals(0.0, emptyList<Nothing>().sumOf { 1.0 })
 
         val items = listOf("", "a", "bc", "de", "fgh", "klmnop")
-        assertEquals(items.size, items.sumOf { 1 })
+        assertEquals(items.size + 14, items.sumOf { it.length + 1 })
         assertEquals(14L, items.sumOf { it.length.toLong() })
-        assertEquals(items.size.toUInt(), items.sumOf { 1U })
+        assertEquals(items.size.toUInt(), items.sumOf { 1U.toUInt() })
         assertEquals(14UL, items.sumOf { it.length.toULong() })
         assertEquals(14.0, items.sumOf { it.length.toDouble() })
         assertEquals(Double.NaN, items.sumOf { 0.0 / it.length })
