@@ -79,8 +79,9 @@ class SimpleProcessBasedScriptEngine(
 
         process = null
 
+        val isWin = "win" in System.getProperty("os.name").toLowerCase()
         val builder = ProcessBuilder(
-            vmExecFile.absolutePath,
+            vmExecFile.absolutePath + if (isWin) ".exe" else "",
             "-f",
             "js/js.engines/src/org/jetbrains/kotlin/js/engine/repl.js",
         )
