@@ -162,7 +162,7 @@ class IrFakeOverrideFunctionImpl(
     override val symbol: IrSimpleFunctionSymbol
         get() = _symbol ?: error("$this has not acquired a symbol yet")
 
-    override val descriptor =
+    override val descriptor get() =
         _symbol?.descriptor ?: WrappedSimpleFunctionDescriptor()
 
     override fun acquireSymbol(symbol: IrSimpleFunctionSymbol) {
