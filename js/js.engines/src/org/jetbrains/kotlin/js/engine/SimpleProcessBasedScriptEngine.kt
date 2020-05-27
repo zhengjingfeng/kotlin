@@ -7,6 +7,8 @@ package org.jetbrains.kotlin.js.engine
 
 import java.io.File
 
+private val isWindows = "win" in System.getProperty("os.name").toLowerCase()
+
 class SimpleProcessBasedScriptEngine(
     private val vmExecFile: File
 ) : ScriptEngine {
@@ -79,9 +81,17 @@ class SimpleProcessBasedScriptEngine(
 
         process = null
 
-        val isWin = "win" in System.getProperty("os.name").toLowerCase()
+        val executablePath =
+            if (isWindows) {
+                val extensions = sequenceOf("", ".exe", ".cmd", ".bat")
+
+                extensions.map { vmExecFile.absolutePath + it }.find { File(it).exists() }
+            } else {
+                vmExecFile.absolutePath
+            }
+
         val builder = ProcessBuilder(
-            vmExecFile.absolutePath + if (isWin) ".exe" else "",
+            executablePath,
             "-f",
             "js/js.engines/src/org/jetbrains/kotlin/js/engine/repl.js",
         )
