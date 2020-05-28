@@ -63,7 +63,11 @@ abstract class GradleBuildRootsLocator {
 
         val isNewScript: Boolean
             get() = root is GradleBuildRoot.Linked &&
+                    !isImported &&
                     !root.importing
+
+        private val isImported: Boolean
+            get() = script != null
     }
 
     fun findScriptBuildRoot(gradleKtsFile: VirtualFile): ScriptUnderRoot? =

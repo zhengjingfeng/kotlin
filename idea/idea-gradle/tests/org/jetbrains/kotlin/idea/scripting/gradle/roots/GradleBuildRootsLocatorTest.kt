@@ -21,4 +21,13 @@ class GradleBuildRootsLocatorTest : AbstractGradleBuildRootsLocatorTest() {
         assertTrue(scriptUnderRoot.isNewScript)
         assertFalse(scriptUnderRoot.isUnrelatedScript)
     }
+
+    @Test
+    fun testBuildGradleKtsNearProjectRoot() {
+        newImportedGradleProject("imported", relativeScripts = listOf("build.gradle.kts"))
+        val scriptUnderRoot = findScriptBuildRoot("imported/build.gradle.kts")
+        assertNotNull(scriptUnderRoot)
+        assertFalse(scriptUnderRoot.isNewScript)
+        assertFalse(scriptUnderRoot.isUnrelatedScript)
+    }
 }
