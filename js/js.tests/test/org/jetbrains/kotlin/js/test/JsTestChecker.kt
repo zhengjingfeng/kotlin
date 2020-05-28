@@ -86,6 +86,7 @@ abstract class AbstractJsTestChecker {
 
     private fun String.normalize() = StringUtil.convertLineSeparators(this)
 
+    // TODO change return type? `String?`
     protected abstract fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any?
 }
 
