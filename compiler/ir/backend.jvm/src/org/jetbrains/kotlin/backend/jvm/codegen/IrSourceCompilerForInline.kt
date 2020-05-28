@@ -97,7 +97,7 @@ class IrSourceCompilerForInline(
         callDefault: Boolean,
         asmMethod: Method
     ): SMAPAndMethodNode {
-        assert(callableDescriptor == callee.symbol.wrappedDescriptor.original) { "Expected $callableDescriptor got ${callee.wrappedDescriptor.original}" }
+        assert(callableDescriptor == callee.symbol.initialDescriptor.original) { "Expected $callableDescriptor got ${callee.initialDescriptor.original}" }
         return ClassCodegen.getOrCreate(callee.parentAsClass, codegen.context).generateMethodNode(callee)
     }
 
