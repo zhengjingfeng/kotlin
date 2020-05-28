@@ -13,13 +13,6 @@ public inline fun </*0*/ T> Comparator(/*0*/ crossinline comparison: (a: T, b: T
 @kotlin.SinceKotlin(version = "1.3") @kotlin.ExperimentalUnsignedTypes @kotlin.internal.InlineOnly public inline fun UShortArray(/*0*/ size: kotlin.Int, /*1*/ init: (kotlin.Int) -> kotlin.UShort): kotlin.UShortArray
 public inline fun </*0*/ T> arrayOf(/*0*/ vararg elements: T /*kotlin.Array<out T>*/): kotlin.Array<T>
 public inline fun </*0*/ reified T> arrayOfNulls(/*0*/ size: kotlin.Int): kotlin.Array<T?>
-public fun </*0*/ T> assertArrayEquals(/*0*/ expected: kotlin.Array<out T>, /*1*/ actual: kotlin.Array<out T>, /*2*/ message: kotlin.String? = ...): kotlin.Unit
-public fun </*0*/ T> assertEquals(/*0*/ expected: T, /*1*/ actual: T, /*2*/ message: kotlin.String? = ...): kotlin.Unit
-public fun assertFails(/*0*/ block: () -> kotlin.Unit): kotlin.Throwable
-public fun assertFalse(/*0*/ actual: kotlin.Boolean, /*1*/ message: kotlin.String? = ...): kotlin.Unit
-public fun </*0*/ T> assertNotEquals(/*0*/ illegal: T, /*1*/ actual: T, /*2*/ message: kotlin.String? = ...): kotlin.Unit
-public fun </*0*/ T> assertSame(/*0*/ expected: T, /*1*/ actual: T, /*2*/ message: kotlin.String? = ...): kotlin.Unit
-public fun assertTrue(/*0*/ actual: kotlin.Boolean, /*1*/ message: kotlin.String? = ...): kotlin.Unit
 public inline fun booleanArrayOf(/*0*/ vararg elements: kotlin.Boolean /*kotlin.BooleanArray*/): kotlin.BooleanArray
 public inline fun byteArrayOf(/*0*/ vararg elements: kotlin.Byte /*kotlin.ByteArray*/): kotlin.ByteArray
 public inline fun charArrayOf(/*0*/ vararg elements: kotlin.Char /*kotlin.CharArray*/): kotlin.CharArray
@@ -40,7 +33,6 @@ public inline fun </*0*/ T> emptyArray(): kotlin.Array<T>
 @kotlin.SinceKotlin(version = "1.1") public inline fun </*0*/ reified T : kotlin.Enum<T>> enumValueOf(/*0*/ name: kotlin.String): T
 @kotlin.SinceKotlin(version = "1.1") public inline fun </*0*/ reified T : kotlin.Enum<T>> enumValues(): kotlin.Array<T>
 @kotlin.internal.InlineOnly public inline fun error(/*0*/ message: kotlin.Any): kotlin.Nothing
-public fun fail(/*0*/ message: kotlin.String? = ...): kotlin.Nothing
 public inline fun floatArrayOf(/*0*/ vararg elements: kotlin.Float /*kotlin.FloatArray*/): kotlin.FloatArray
 public inline fun intArrayOf(/*0*/ vararg elements: kotlin.Int /*kotlin.IntArray*/): kotlin.IntArray
 public fun </*0*/ T> lazy(/*0*/ initializer: () -> T): kotlin.Lazy<T>
@@ -72,8 +64,6 @@ public inline fun shortArrayOf(/*0*/ vararg elements: kotlin.Short /*kotlin.Shor
 @kotlin.internal.InlineOnly public inline fun </*0*/ R> synchronized(/*0*/ lock: kotlin.Any, /*1*/ block: () -> R): R
     CallsInPlace(block, EXACTLY_ONCE)
 
-public fun testFalse(/*0*/ f: () -> kotlin.Boolean): kotlin.Unit
-public fun testTrue(/*0*/ f: () -> kotlin.Boolean): kotlin.Unit
 @kotlin.SinceKotlin(version = "1.3") @kotlin.ExperimentalUnsignedTypes @kotlin.internal.InlineOnly public inline fun ubyteArrayOf(/*0*/ vararg elements: kotlin.UByte /*kotlin.UByteArray*/): kotlin.UByteArray
 @kotlin.SinceKotlin(version = "1.3") @kotlin.ExperimentalUnsignedTypes @kotlin.internal.InlineOnly public inline fun uintArrayOf(/*0*/ vararg elements: kotlin.UInt /*kotlin.UIntArray*/): kotlin.UIntArray
 @kotlin.SinceKotlin(version = "1.3") @kotlin.ExperimentalUnsignedTypes @kotlin.internal.InlineOnly public inline fun ulongArrayOf(/*0*/ vararg elements: kotlin.ULong /*kotlin.ULongArray*/): kotlin.ULongArray
@@ -998,4 +988,30 @@ public final data class Pair</*0*/ out A, /*1*/ out B> : kotlin.io.Serializable 
 
 @kotlin.annotation.Target(allowedTargets = {AnnotationTarget.CLASS, AnnotationTarget.CONSTRUCTOR, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY}) @kotlin.annotation.Retention(value = AnnotationRetention.BINARY) @kotlin.annotation.MustBeDocumented @kotlin.SinceKotlin(version = "1.1") public final annotation class PublishedApi : kotlin.Annotation {
     /*primary*/ public constructor PublishedApi()
+}
+
+@kotlin.annotation.Target(allowedTargets = {}) @kotlin.annotation.Retention(value = AnnotationRetention.BINARY) @kotlin.annotation.MustBeDocumented public final annotation class ReplaceWith : kotlin.Annotation {
+    /*primary*/ public constructor ReplaceWith(/*0*/ expression: kotlin.String, /*1*/ vararg imports: kotlin.String /*kotlin.Array<out kotlin.String>*/)
+    public final val expression: kotlin.String
+        public final fun <get-expression>(): kotlin.String
+    public final val imports: kotlin.Array<out kotlin.String>
+        public final fun <get-imports>(): kotlin.Array<out kotlin.String>
+}
+
+@kotlin.annotation.Target(allowedTargets = {AnnotationTarget.ANNOTATION_CLASS}) @kotlin.annotation.Retention(value = AnnotationRetention.BINARY) @kotlin.SinceKotlin(version = "1.3") public final annotation class RequiresOptIn : kotlin.Annotation {
+    /*primary*/ public constructor RequiresOptIn(/*0*/ message: kotlin.String = ..., /*1*/ level: kotlin.RequiresOptIn.Level = ...)
+    public final val level: kotlin.RequiresOptIn.Level
+        public final fun <get-level>(): kotlin.RequiresOptIn.Level
+    public final val message: kotlin.String
+        public final fun <get-message>(): kotlin.String
+
+    public final enum class Level : kotlin.Enum<kotlin.RequiresOptIn.Level> {
+        enum entry WARNING
+
+        enum entry ERROR
+
+        // Static members
+        public final /*synthesized*/ fun valueOf(/*0*/ value: kotlin.String): kotlin.RequiresOptIn.Level
+        public final /*synthesized*/ fun values(): kotlin.Array<kotlin.RequiresOptIn.Level>
+    }
 }
