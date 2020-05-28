@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.incremental.components.LookupLocation
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.utils.Printer
+import org.jetbrains.kotlin.utils.SmartList
 import org.jetbrains.kotlin.utils.addToStdlib.flatMapToNullable
 import java.lang.reflect.Modifier
 
@@ -58,8 +59,14 @@ interface MemberScope : ResolutionScope {
 
 fun MemberScope.computeAllNames() = getClassifierNames()?.let { getFunctionNames() + getVariableNames() + it }
 
-fun Collection<MemberScope>.flatMapClassifierNamesOrNull(): MutableSet<Name>? =
+fun Iterable<MemberScope>.flatMapClassifierNamesOrNull(): MutableSet<Name>? =
         flatMapToNullable(hashSetOf(), MemberScope::getClassifierNames)
+
+fun listOfNonEmptyScopes(vararg scopes: MemberScope?): List<MemberScope> =
+    scopes.filterTo(SmartList<MemberScope>()) { it != null && it !== MemberScope.Empty }
+
+fun listOfNonEmptyScopes(scopes: Iterable<MemberScope?>): List<MemberScope> =
+    scopes.filterTo(SmartList<MemberScope>()) { it != null && it !== MemberScope.Empty }
 
 /**
  * The same as getDescriptors(kindFilter, nameFilter) but the result is guaranteed to be filtered by kind and name.
@@ -165,7 +172,6 @@ class DescriptorKindFilter(
                     val filter = field.get(null) as? DescriptorKindFilter
                     if (filter != null) MaskToName(filter.kindMask, field.name) else null
                 }
-                .toList()
 
         private val DEBUG_MASK_BIT_NAMES = staticFields<DescriptorKindFilter>()
                 .filter { it.type == Integer.TYPE }
@@ -174,7 +180,6 @@ class DescriptorKindFilter(
                     val isOneBitMask = mask == (mask and (-mask))
                     if (isOneBitMask) MaskToName(mask, field.name) else null
                 }
-                .toList()
 
         private inline fun <reified T : Any> staticFields() = T::class.java.fields.filter { Modifier.isStatic(it.modifiers) }
     }

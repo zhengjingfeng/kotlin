@@ -24,7 +24,7 @@ import org.jetbrains.kotlin.resolve.selectMostSpecificInEachOverridableGroup
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.utils.Printer
 
-class TypeIntersectionScope private constructor(override val workerScope: ChainedMemberScope) : AbstractScopeAdapter() {
+class TypeIntersectionScope private constructor(private val debugName: String, override val workerScope: MemberScope) : AbstractScopeAdapter() {
     override fun getContributedFunctions(name: Name, location: LookupLocation) =
             super.getContributedFunctions(name, location).selectMostSpecificInEachOverridableGroup { this }
 
@@ -39,17 +39,19 @@ class TypeIntersectionScope private constructor(override val workerScope: Chaine
     }
 
     override fun printScopeStructure(p: Printer) {
-        p.print("TypeIntersectionScope for: " + workerScope.debugName)
+        p.print("TypeIntersectionScope for: " + debugName)
         super.printScopeStructure(p)
     }
 
     companion object {
         @JvmStatic
         fun create(message: String, types: Collection<KotlinType>): MemberScope {
-            val chainedScope = ChainedMemberScope(message, types.map { it.memberScope })
-            if (types.size <= 1) return chainedScope
+            val nonEmptyScopes = listOfNonEmptyScopes(types.map { it.memberScope })
+            val chainedScope = ChainedMemberScope.createNotFiltered(message, nonEmptyScopes)
 
-            return TypeIntersectionScope(chainedScope)
+            if (nonEmptyScopes.size <= 1) return chainedScope
+
+            return TypeIntersectionScope(message, chainedScope)
         }
     }
 }

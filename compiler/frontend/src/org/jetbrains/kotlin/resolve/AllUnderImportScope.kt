@@ -24,6 +24,7 @@ import org.jetbrains.kotlin.resolve.scopes.BaseImportingScope
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import org.jetbrains.kotlin.resolve.scopes.computeAllNames
+import org.jetbrains.kotlin.resolve.scopes.listOfNonEmptyScopes
 import org.jetbrains.kotlin.utils.Printer
 import org.jetbrains.kotlin.utils.addToStdlib.flatMapToNullable
 
@@ -32,13 +33,13 @@ class AllUnderImportScope(
     excludedImportNames: Collection<FqName>
 ) : BaseImportingScope(null) {
 
-    private val scopes: List<MemberScope> = if (descriptor is ClassDescriptor) {
-        listOf(descriptor.staticScope, descriptor.unsubstitutedInnerClassesScope)
+    private val scopes: Array<MemberScope> = if (descriptor is ClassDescriptor) {
+        listOfNonEmptyScopes(descriptor.staticScope, descriptor.unsubstitutedInnerClassesScope).toTypedArray()
     } else {
         assert(descriptor is PackageViewDescriptor) {
             "Must be class or package view descriptor: $descriptor"
         }
-        listOf((descriptor as PackageViewDescriptor).memberScope)
+        listOfNonEmptyScopes((descriptor as PackageViewDescriptor).memberScope).toTypedArray()
     }
 
     private val excludedNames: Set<Name> = if (excludedImportNames.isEmpty()) { // optimization
@@ -49,7 +50,7 @@ class AllUnderImportScope(
         excludedImportNames.mapNotNull { if (it.parent() == fqName) it.shortName() else null }.toSet()
     }
 
-    override fun computeImportedNames(): Set<Name>? = scopes.flatMapToNullable(hashSetOf(), MemberScope::computeAllNames)
+    override fun computeImportedNames(): Set<Name>? = scopes.asIterable().flatMapToNullable(hashSetOf(), MemberScope::computeAllNames)
 
     override fun getContributedDescriptors(
         kindFilter: DescriptorKindFilter,
@@ -70,7 +71,13 @@ class AllUnderImportScope(
 
     override fun getContributedClassifier(name: Name, location: LookupLocation): ClassifierDescriptor? {
         if (name in excludedNames) return null
-        return scopes.asSequence().mapNotNull { it.getContributedClassifier(name, location) }.singleOrNull()
+        var single: ClassifierDescriptor? = null
+        for (scope in scopes) {
+            val res = scope.getContributedClassifier(name, location) ?: continue
+            if (single == null) single = res
+            else return null
+        }
+        return single
     }
 
     override fun getContributedVariables(name: Name, location: LookupLocation): List<VariableDescriptor> {
