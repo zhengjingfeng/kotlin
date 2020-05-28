@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.backend.jvm.ir.getJvmNameFromAnnotation
 import org.jetbrains.kotlin.backend.jvm.ir.isCompiledToJvmDefault
 import org.jetbrains.kotlin.backend.jvm.ir.propertyIfAccessor
 import org.jetbrains.kotlin.backend.jvm.lower.suspendFunctionOriginal
-import org.jetbrains.kotlin.builtins.BuiltInsPackageFragment
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.builtins.jvm.JavaToKotlinClassMap
 import org.jetbrains.kotlin.codegen.JvmCodegenUtil
@@ -353,73 +352,42 @@ class MethodSignatureMapper(private val context: JvmBackendContext) {
         return current
     }
 
-    fun getJvmMethodNameIfSpecial(irFunction: IrFunction): String? {
-        val overriddenBuiltin = getOverriddenBuiltinThatAffectsJvmName(irFunction)?.propertyIfAccessor
-            ?: return null
-        return when (overriddenBuiltin) {
-            is IrProperty -> overriddenBuiltin.getBuiltinSpecialPropertyGetterName()
-            is IrSimpleFunction -> getDifferentJvmNameForBuiltin(overriddenBuiltin)
-            else -> null
+    fun getJvmMethodNameIfSpecial(irFunction: IrFunction): String? =
+        (irFunction as? IrSimpleFunction)?.run {
+            getBuiltinSpecialPropertyGetterName() ?: getDifferentNameForJvmBuiltinFunction()
         }
-    }
 
-    private fun getOverriddenBuiltinThatAffectsJvmName(irFunction: IrFunction): IrFunction? = when {
-        irFunction !is IrSimpleFunction -> null
-        isBuiltIn(irFunction) -> irFunction.getOverriddenBuiltinWithDifferentJvmName()
-        else -> null
-    }
-
-    private fun isBuiltIn(irDeclaration: IrDeclarationWithName): Boolean {
-        val packageFragmentPath = irDeclaration.getPackageFragment()?.fqName?.pathSegments() ?: return false
+    private val IrDeclarationWithName.isBuiltIn: Boolean  get() {
+        val packageFragmentPath = getPackageFragment()?.fqName?.pathSegments() ?: return false
         return packageFragmentPath.singleOrNull()?.asString() == "kotlin" ||
-                irDeclaration.parent.safeAs<IrClass>()?.fqNameWhenAvailable?.toUnsafe()?.let {
+                parent.safeAs<IrClass>()?.fqNameWhenAvailable?.toUnsafe()?.let {
                     JavaToKotlinClassMap.mapKotlinToJava(it) != null
                 } == true
     }
 
-    private fun IrSimpleFunction.getOverriddenBuiltinWithDifferentJvmName(): IrSimpleFunction? {
-        val propertyName = correspondingPropertySymbol?.owner?.name
-        if (name !in BuiltinMethodsWithDifferentJvmName.ORIGINAL_SHORT_NAMES
-            && propertyName !in BuiltinSpecialProperties.SPECIAL_SHORT_NAMES
-        ) return null
-
-        return if (propertyName != null)
-            allOverridden(includeSelf = true).firstOrNull { it.correspondingPropertySymbol!!.owner.hasBuiltinSpecialPropertyFqName() }
-        else
-            allOverridden(includeSelf = true).firstOrNull { it.isBuiltinFunctionWithDifferentNameInJvm() }
+    // From BuiltinMethodsWithDifferentJvmName.isBuiltinFunctionWithDifferentNameInJvm, BuiltinMethodsWithDifferentJvmName.getJvmName
+    fun IrSimpleFunction.getDifferentNameForJvmBuiltinFunction(): String? {
+        if (name !in BuiltinMethodsWithDifferentJvmName.ORIGINAL_SHORT_NAMES) return null
+        if (!isBuiltIn) return null
+        return allOverridden(includeSelf = true)
+            .filter { it.isBuiltIn }
+            .mapNotNull {
+                val signature = it.computeJvmSignature()
+                BuiltinMethodsWithDifferentJvmName.SIGNATURE_TO_JVM_REPRESENTATION_NAME[signature]?.asString()
+            }
+            .firstOrNull()
     }
 
-    // From BuiltinSpecialProperties.hasBuiltinSpecialPropertyFqName
-    private fun IrProperty.hasBuiltinSpecialPropertyFqName(): Boolean {
-        if (name !in BuiltinSpecialProperties.SPECIAL_SHORT_NAMES) return false
-
-        return hasBuiltinSpecialPropertyFqNameImpl()
-    }
-
-    private fun IrProperty.hasBuiltinSpecialPropertyFqNameImpl(): Boolean =
-        getter?.valueParameters?.isEmpty() == true && fqNameWhenAvailable in BuiltinSpecialProperties.SPECIAL_FQ_NAMES
-
-    // From BuiltinMethodsWithDifferentJvmName.isBuiltinFunctionWithDifferentNameInJvm
-    fun IrSimpleFunction.isBuiltinFunctionWithDifferentNameInJvm(): Boolean =
-        isBuiltIn(this) && allOverridden(includeSelf = true).any {
-            val signature = it.computeJvmSignature()
-            BuiltinMethodsWithDifferentJvmName.SIGNATURE_TO_JVM_REPRESENTATION_NAME.containsKey(signature)
-        }
-
-    // From BuiltinSpecialProperties.getBuiltinSpecialPropertyGetterName
-    private fun IrProperty.getBuiltinSpecialPropertyGetterName(): String? {
-        assert(isBuiltIn(this)) { "This method is defined only for builtin members, but ${render()} found" }
-
-        val builtin = getter?.allOverridden(includeSelf = true)?.firstOrNull {
-            it.correspondingPropertySymbol!!.owner.hasBuiltinSpecialPropertyFqName()
-        }?.correspondingPropertySymbol?.owner ?: return null
-        return BuiltinSpecialProperties.PROPERTY_FQ_NAME_TO_JVM_GETTER_NAME_MAP[builtin.fqNameWhenAvailable]?.asString()
-    }
-
-    // From BuiltinMethodsWithDifferentJvmName.getJvmName
-    private fun getDifferentJvmNameForBuiltin(overriddenBuiltin: IrSimpleFunction): String? {
-        val signature = overriddenBuiltin.computeJvmSignature()
-        return BuiltinMethodsWithDifferentJvmName.SIGNATURE_TO_JVM_REPRESENTATION_NAME[signature]?.asString()
+    fun IrSimpleFunction.getBuiltinSpecialPropertyGetterName(): String? {
+        val propertyName  = correspondingPropertySymbol?.owner?.name ?: return null
+        if (propertyName !in BuiltinSpecialProperties.SPECIAL_SHORT_NAMES) return null
+        if (!isBuiltIn) return null
+        return allOverridden(includeSelf = true)
+            .mapNotNull {
+                val property = it.correspondingPropertySymbol!!.owner
+                BuiltinSpecialProperties.PROPERTY_FQ_NAME_TO_JVM_GETTER_NAME_MAP[property.fqNameWhenAvailable]?.asString()
+            }
+            .firstOrNull()
     }
 
     private fun IrFunction.computeJvmSignature(): String = signatures {
