@@ -20,10 +20,10 @@ fun foo(d: Double): Double = 2.0 // (2)
 
 fun case1() {
     val x1: (Int) -> Int = ::<!DEBUG_INFO_CALL("fqName: testsCase1.foo; typeCall: function")!>foo<!>
-    val x2: (Int) -> Int = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction1<@kotlin.ParameterName kotlin.Int, kotlin.Int>")!>::foo<!>
+    val x2: (Int) -> Int = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction1<kotlin.Int, kotlin.Int>")!>::foo<!>
 
     val y1: (Double) -> Double = ::<!DEBUG_INFO_CALL("fqName: testsCase1.foo; typeCall: function")!>foo<!>
-    val y2: (Double) -> Double = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction1<@kotlin.ParameterName kotlin.Double, kotlin.Double>")!>::foo<!>
+    val y2: (Double) -> Double = <!DEBUG_INFO_EXPRESSION_TYPE("kotlin.reflect.KFunction1<kotlin.Double, kotlin.Double>")!>::foo<!>
 }
 
 // FILE: TestCase2.kt
