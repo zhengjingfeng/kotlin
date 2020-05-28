@@ -18,8 +18,8 @@ FILE fqName:<root> fileName:/abstractList.kt
       FUN name:<get-size> visibility:public modality:FINAL <> ($this:<root>.A) returnType:kotlin.Int
         correspondingProperty: PROPERTY name:size visibility:public modality:FINAL [val]
         overridden:
-          public abstract fun <get-size> (): kotlin.Int declared in kotlin.collections.MutableCollection
-          public abstract fun <get-size> (): kotlin.Int declared in kotlin.collections.MutableList
+          public abstract fun <get-size> (): kotlin.Int [fake_override] declared in kotlin.collections.MutableCollection
+          public abstract fun <get-size> (): kotlin.Int [fake_override] declared in kotlin.collections.MutableList
         $this: VALUE_PARAMETER name:<this> type:<root>.A
         BLOCK_BODY
           RETURN type=kotlin.Nothing from='public final fun <get-size> (): kotlin.Int declared in <root>.A'
