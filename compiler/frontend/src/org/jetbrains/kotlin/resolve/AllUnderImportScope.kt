@@ -27,6 +27,8 @@ import org.jetbrains.kotlin.resolve.scopes.computeAllNames
 import org.jetbrains.kotlin.resolve.scopes.listOfNonEmptyScopes
 import org.jetbrains.kotlin.utils.Printer
 import org.jetbrains.kotlin.utils.addToStdlib.flatMapToNullable
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class AllUnderImportScope(
     descriptor: DeclarationDescriptor,
@@ -69,7 +71,16 @@ class AllUnderImportScope(
             .filter { it !is PackageViewDescriptor } // subpackages are not imported
     }
 
+    private val lastClassifiedLock = ReentrantLock()
+    private var lastClassifierName: Name? = null
+    private var lastClassifierDescriptor: ClassifierDescriptor? = null
+
     override fun getContributedClassifier(name: Name, location: LookupLocation): ClassifierDescriptor? {
+        lastClassifiedLock.withLock {
+            if (name == lastClassifierName) return lastClassifierDescriptor
+            lastClassifierName = name
+            lastClassifierDescriptor = null
+        }
         if (name in excludedNames) return null
         var single: ClassifierDescriptor? = null
         for (scope in scopes) {
@@ -77,7 +88,11 @@ class AllUnderImportScope(
             if (single == null) single = res
             else return null
         }
-        return single
+        return single.also {
+            lastClassifiedLock.withLock {
+                lastClassifierDescriptor = it
+            }
+        }
     }
 
     override fun getContributedVariables(name: Name, location: LookupLocation): List<VariableDescriptor> {
