@@ -225,17 +225,10 @@ abstract class Kapt3AndroidIT : Kapt3BaseIT() {
             assertKaptSuccessful()
             assertFileExists("app/build/generated/source/kapt/debug/com/example/databinding/BR.java")
 
-            when {
-                output.contains("-Aandroid.databinding.enableV2=1") -> {
-                    // databinding compiler v2 was introduced in AGP 3.1.0, was enabled by default in AGP 3.2.0
-                    assertNoSuchFile("library/build/generated/source/kapt/debugAndroidTest/android/databinding/DataBinderMapperImpl.java")
-                    assertFileExists("app/build/generated/source/kapt/debug/com/example/databinding/databinding/ActivityTestBindingImpl.java")
-                }
-                else -> {
-                    assertNoSuchFile("library/build/generated/source/kapt/debugAndroidTest/android/databinding/DataBinderMapper.java")
-                    assertFileExists("app/build/generated/source/kapt/debug/com/example/databinding/databinding/ActivityTestBinding.java")
-                }
-            }
+            // databinding compiler v2 was introduced in AGP 3.1.0, was enabled by default in AGP 3.2.0
+            assertContains("-Aandroid.databinding.enableV2=1")
+            assertNoSuchFile("library/build/generated/source/kapt/debugAndroidTest/android/databinding/DataBinderMapperImpl.java")
+            assertFileExists("app/build/generated/source/kapt/debug/com/example/databinding/databinding/ActivityTestBindingImpl.java")
 
             // KT-23866
             assertNotContains("The following options were not recognized by any processor")
