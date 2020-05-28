@@ -19,8 +19,6 @@ open class AbstractGradleBuildRootsLocatorTest {
     private inner class MyRootsLocator : GradleBuildRootsLocator() {
         override fun getScriptInfo(localPath: String): GradleScriptInfo? = scripts[localPath]
         fun accessRoots() = roots
-        fun accessFindScriptBuildRoot(filePath: String, searchNearestLegacy: Boolean = true) =
-            findScriptBuildRoot(filePath, searchNearestLegacy)
     }
 
     private fun add(root: GradleBuildRoot.Linked) {
@@ -37,7 +35,7 @@ open class AbstractGradleBuildRootsLocatorTest {
             dir,
             null,
             GradleBuildRootData(
-                relativeProjectRoots.map { pathPrefix + it },
+                relativeProjectRoots.map { (pathPrefix + it).removeSuffix("/") },
                 listOf(),
                 listOf()
             )
@@ -63,5 +61,5 @@ open class AbstractGradleBuildRootsLocatorTest {
     }
 
     fun findScriptBuildRoot(filePath: String, searchNearestLegacy: Boolean = true) =
-        locator.accessFindScriptBuildRoot(filePath, searchNearestLegacy)
+        locator.findScriptBuildRoot(filePath, searchNearestLegacy)
 }
