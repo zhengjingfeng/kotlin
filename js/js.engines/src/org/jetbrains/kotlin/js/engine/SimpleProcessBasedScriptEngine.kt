@@ -26,7 +26,7 @@ class SimpleProcessBasedScriptEngine(
         val stderr = vm.errorStream
 
         val writer = stdin.writer()
-        writer.write(StringUtil.convertLineSeparators(script) + "\n")
+        writer.write(StringUtil.convertLineSeparators(script, "\\n") + "\n")
         writer.flush()
 
         val out = StringBuilder()
