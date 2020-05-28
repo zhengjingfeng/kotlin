@@ -27574,6 +27574,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
                     KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/reflection/mapping/types"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM, true);
                 }
 
+                @TestMetadata("allSupertypes.kt")
+                public void testAllSupertypes() throws Exception {
+                    runTest("compiler/testData/codegen/box/reflection/mapping/types/allSupertypes.kt");
+                }
+
                 @TestMetadata("annotationConstructorParameters.kt")
                 public void testAnnotationConstructorParameters() throws Exception {
                     runTest("compiler/testData/codegen/box/reflection/mapping/types/annotationConstructorParameters.kt");
@@ -27587,6 +27592,11 @@ public class BlackBoxCodegenTestGenerated extends AbstractBlackBoxCodegenTest {
                 @TestMetadata("constructors.kt")
                 public void testConstructors() throws Exception {
                     runTest("compiler/testData/codegen/box/reflection/mapping/types/constructors.kt");
+                }
+
+                @TestMetadata("createType.kt")
+                public void testCreateType() throws Exception {
+                    runTest("compiler/testData/codegen/box/reflection/mapping/types/createType.kt");
                 }
 
                 @TestMetadata("genericArrayElementType.kt")

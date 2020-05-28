@@ -19,7 +19,10 @@ package kotlin.reflect.full
 
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.types.*
-import kotlin.reflect.*
+import kotlin.reflect.KClassifier
+import kotlin.reflect.KType
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.KVariance
 import kotlin.reflect.jvm.internal.KClassifierImpl
 import kotlin.reflect.jvm.internal.KTypeImpl
 import kotlin.reflect.jvm.internal.KotlinReflectionInternalError
@@ -58,9 +61,7 @@ fun KClassifier.createType(
 
     val kotlinType = createKotlinType(typeAnnotations, typeConstructor, arguments, nullable)
 
-    return KTypeImpl(kotlinType) {
-        TODO("Java type is not yet supported for types created with createType (classifier = $this)")
-    }
+    return KTypeImpl(kotlinType)
 }
 
 private fun createKotlinType(
