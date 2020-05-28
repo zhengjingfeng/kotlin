@@ -228,8 +228,7 @@ class IrFakeOverridePropertyImpl(
     isExternal: Boolean,
     isExpect: Boolean,
 ) : IrPropertyCommonImpl(startOffset, endOffset, origin, name, visibility, modality, isVar, isConst, isLateinit,
-    isDelegated, isExternal, isExpect, isFakeOverride = true),
-    IrFakeOverrideProperty
+    isDelegated, isExternal, isExpect, isFakeOverride = true)
 {
     private var _symbol: IrPropertySymbol? = null
 
@@ -239,7 +238,7 @@ class IrFakeOverridePropertyImpl(
     override val descriptor get() =
         _symbol?.descriptor ?: WrappedPropertyDescriptor()
 
-    override fun acquireSymbol(symbol: IrPropertySymbol) {
+    fun acquireSymbol(symbol: IrPropertySymbol) {
         assert(_symbol == null) { "$this already has symbol _symbol" }
         _symbol = symbol
         symbol.bind(this)
