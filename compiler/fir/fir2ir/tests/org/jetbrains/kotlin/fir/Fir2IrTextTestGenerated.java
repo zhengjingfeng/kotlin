@@ -703,6 +703,11 @@ public class Fir2IrTextTestGenerated extends AbstractFir2IrTextTest {
             KotlinTestUtils.runTestWithCustomIgnoreDirective(this::doTest, TargetBackend.ANY, testDataFilePath, "// IGNORE_BACKEND_FIR: ");
         }
 
+        @TestMetadata("abstractList.kt")
+        public void testAbstractList() throws Exception {
+            runTest("compiler/testData/ir/irText/expressions/abstractList.kt");
+        }
+
         public void testAllFilesPresentInExpressions() throws Exception {
             KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/irText/expressions"), Pattern.compile("^(.+)\\.kt$"), null, true);
         }

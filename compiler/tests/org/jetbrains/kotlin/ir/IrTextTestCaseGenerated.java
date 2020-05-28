@@ -702,6 +702,11 @@ public class IrTextTestCaseGenerated extends AbstractIrTextTestCase {
             KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
         }
 
+        @TestMetadata("abstractList.kt")
+        public void testAbstractList() throws Exception {
+            runTest("compiler/testData/ir/irText/expressions/abstractList.kt");
+        }
+
         public void testAllFilesPresentInExpressions() throws Exception {
             KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/ir/irText/expressions"), Pattern.compile("^(.+)\\.kt$"), null, true);
         }
