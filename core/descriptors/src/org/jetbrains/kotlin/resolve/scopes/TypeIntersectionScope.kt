@@ -47,11 +47,11 @@ class TypeIntersectionScope private constructor(private val debugName: String, o
         @JvmStatic
         fun create(message: String, types: Collection<KotlinType>): MemberScope {
             val nonEmptyScopes = listOfNonEmptyScopes(types.map { it.memberScope })
-            val chainedScope = ChainedMemberScope.createNotFiltered(message, nonEmptyScopes)
+            val chainedOrSingle = ChainedMemberScope.createOrSingle(message, nonEmptyScopes)
 
-            if (nonEmptyScopes.size <= 1) return chainedScope
+            if (nonEmptyScopes.size <= 1) return chainedOrSingle
 
-            return TypeIntersectionScope(message, chainedScope)
+            return TypeIntersectionScope(message, chainedOrSingle)
         }
     }
 }

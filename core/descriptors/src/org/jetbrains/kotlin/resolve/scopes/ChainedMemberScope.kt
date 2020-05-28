@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.utils.Printer
 import org.jetbrains.kotlin.utils.SmartList
 
 class ChainedMemberScope private constructor(
-    internal val debugName: String,
+    private val debugName: String,
     private val scopes: Array<out MemberScope>
 ) : MemberScope {
 
@@ -71,15 +71,16 @@ class ChainedMemberScope private constructor(
         fun create(debugName: String, scopes: Iterable<MemberScope>): MemberScope {
             val flattenedNonEmptyScopes = SmartList<MemberScope>()
             for (scope in scopes) {
-                if (scope !== MemberScope.Empty) {
-                    if (scope is ChainedMemberScope) flattenedNonEmptyScopes.addAll(scope.scopes)
-                    else flattenedNonEmptyScopes.add(scope)
+                when {
+                    scope === MemberScope.Empty -> {}
+                    scope is ChainedMemberScope -> flattenedNonEmptyScopes.addAll(scope.scopes)
+                    else -> flattenedNonEmptyScopes.add(scope)
                 }
             }
-            return createNotFiltered(debugName, flattenedNonEmptyScopes)
+            return createOrSingle(debugName, flattenedNonEmptyScopes)
         }
 
-        internal fun createNotFiltered(debugName: String, scopes: List<MemberScope>): MemberScope =
+        internal fun createOrSingle(debugName: String, scopes: List<MemberScope>): MemberScope =
             when (scopes.size) {
                 0 -> MemberScope.Empty
                 1 -> scopes[0]
