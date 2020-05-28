@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.ir.descriptors.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.symbols.impl.IrPublicSymbolBase
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.*
 import org.jetbrains.kotlin.ir.util.*
@@ -104,7 +105,13 @@ import org.jetbrains.kotlin.backend.common.serialization.proto.PublicIdSignature
 import org.jetbrains.kotlin.backend.common.serialization.proto.AccessorIdSignature as ProtoAccessorIdSignature
 import org.jetbrains.kotlin.backend.common.serialization.proto.FileLocalIdSignature as ProtoFileLocalIdSignature
 
-abstract class IrFileDeserializer(val logger: LoggingContext, val builtIns: IrBuiltIns, val symbolTable: SymbolTable, var constructFakeOverrides: Boolean, protected var deserializeBodies: Boolean) {
+abstract class IrFileDeserializer(
+    val logger: LoggingContext,
+    val builtIns: IrBuiltIns,
+    val symbolTable: SymbolTable,
+    protected var deserializeBodies: Boolean,
+    protected val fakeOverrideBuilder: FakeOverrideBuilder?
+) {
 
     abstract fun deserializeIrSymbolToDeclare(code: Long): Pair<IrSymbol, IdSignature>
     abstract fun deserializeIrSymbol(code: Long): IrSymbol
@@ -1037,7 +1044,7 @@ abstract class IrFileDeserializer(val logger: LoggingContext, val builtIns: IrBu
                 typeParameters = deserializeTypeParameters(proto.typeParameterList, true)
 
                 proto.declarationList
-                    //.filterNot { isSkippableFakeOverride(it) }
+                    .filterNot { isSkippableFakeOverride(it, this) }
                     .mapTo(declarations) { deserializeDeclaration(it) }
 
                 thisReceiver = deserializeIrValueParameter(proto.thisReceiver, -1)
@@ -1365,22 +1372,25 @@ abstract class IrFileDeserializer(val logger: LoggingContext, val builtIns: IrBu
 
     // Depending on deserialization strategy we either deserialize public api fake overrides
     // or reconstruct them after IR linker completes.
-    private fun isSkippableFakeOverride(proto: ProtoDeclaration): Boolean {
-        if (!constructFakeOverrides) return false
+    private fun isSkippableFakeOverride(proto: ProtoDeclaration, parent: IrClass): Boolean {
+        if (fakeOverrideBuilder == null) return false
+        if (!fakeOverrideBuilder.platformSpecificClassFilter.constructFakeOverrides(parent)) return false
 
-        val isFakeOverride = when (proto.declaratorCase!!) {
+        val symbol = when (proto.declaratorCase!!) {
+            IR_FUNCTION -> deserializeIrSymbol(proto.irFunction.base.base.symbol)
+            IR_PROPERTY -> deserializeIrSymbol(proto.irProperty.base.symbol)
+            // Don't consider IR_FIELDS here.
+            else -> return false
+        }
+        if (symbol !is IrPublicSymbolBase<*>) return false
+        if (!symbol.signature.isPublic) return false
+
+        return when (proto.declaratorCase!!) {
             IR_FUNCTION -> FunctionFlags.decode(proto.irFunction.base.base.flags).isFakeOverride
             IR_PROPERTY -> PropertyFlags.decode(proto.irProperty.base.flags).isFakeOverride
             // Don't consider IR_FIELDS here.
             else -> false
         }
-        val isPublicApi = when (proto.declaratorCase!!) {
-            IR_FUNCTION -> deserializeIrSymbol(proto.irFunction.base.base.symbol).signature.isPublic
-            IR_PROPERTY -> deserializeIrSymbol(proto.irProperty.base.symbol).signature.isPublic
-            // Don't consider IR_FIELDS here.
-            else -> false
-        }
-        return isFakeOverride && isPublicApi
     }
 
     fun deserializeDeclaration(proto: ProtoDeclaration, parent: IrDeclarationParent) =

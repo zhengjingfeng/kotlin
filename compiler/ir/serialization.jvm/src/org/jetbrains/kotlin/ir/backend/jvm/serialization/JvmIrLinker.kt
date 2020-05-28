@@ -27,10 +27,18 @@ import org.jetbrains.kotlin.load.java.descriptors.JavaClassDescriptor
 import org.jetbrains.kotlin.load.java.lazy.descriptors.LazyJavaPackageFragment
 import org.jetbrains.kotlin.name.Name
 
-class JvmIrLinker(currentModule: ModuleDescriptor?, logger: LoggingContext, builtIns: IrBuiltIns, symbolTable: SymbolTable, override val functionalInteraceFactory: IrAbstractFunctionFactory, private val stubGenerator: DeclarationStubGenerator, private val manglerDesc: JvmManglerDesc) :
-    KotlinIrLinker(currentModule, logger, builtIns, symbolTable, emptyList()) {
+class JvmIrLinker(
+    currentModule: ModuleDescriptor?,
+    logger: LoggingContext,
+    builtIns: IrBuiltIns,
+    symbolTable: SymbolTable,
+    override val functionalInteraceFactory: IrAbstractFunctionFactory,
+    private val stubGenerator: DeclarationStubGenerator,
+    private val manglerDesc: JvmManglerDesc,
+    deserializeFakeOverrides: Boolean = FakeOverrideControl.deserializeFakeOverrides
+) : KotlinIrLinker(currentModule, logger, builtIns, symbolTable, emptyList(), deserializeFakeOverrides) {
 
-    override val fakeOverrideBuilderImpl = FakeOverrideBuilderImpl(symbolTable, IdSignatureSerializer(JvmManglerIr), builtIns)
+    override val fakeOverrideBuilder = FakeOverrideBuilderImpl(symbolTable, IdSignatureSerializer(JvmManglerIr), builtIns)
     override val fakeOverrideChecker = FakeOverrideChecker(JvmManglerIr, JvmManglerDesc())
 
     private val javaName = Name.identifier("java")

@@ -37,6 +37,11 @@ import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 
+interface FakeOverrideBuilder {
+    fun buildFakeOverridesForClass(clazz: IrClass)
+    val platformSpecificClassFilter: PlatformFakeOverrideClassFilter
+}
+
 interface PlatformFakeOverrideClassFilter {
     fun constructFakeOverrides(clazz: IrClass): Boolean = true
 }
@@ -46,10 +51,11 @@ object DefaultFakeOverrideClassFilter : PlatformFakeOverrideClassFilter
 object FakeOverrideControl {
     // If set to true: all fake overrides go to klib serialized IR.
     // If set to false: eligible fake overrides are not serialized.
-    val serializeFakeOverrides: Boolean = false
+    val serializeFakeOverrides: Boolean = true
 
     // If set to true: fake overrides are deserialized from klib serialized IR.
     // If set to false: eligible fake overrides are constructed within IR linker.
+    // This is the default in the absence of -Xdeserialize-fake-overrides CLI flag.
     val deserializeFakeOverrides: Boolean = false
 }
 
@@ -57,7 +63,7 @@ class FakeOverrideBuilderImpl(
     val symbolTable: SymbolTable,
     val signaturer: IdSignatureSerializer,
     val irBuiltIns: IrBuiltIns,
-    private val platformSpecificClassFilter: PlatformFakeOverrideClassFilter = DefaultFakeOverrideClassFilter
+    override val platformSpecificClassFilter: PlatformFakeOverrideClassFilter = DefaultFakeOverrideClassFilter
 ) : FakeOverrideBuilder, FakeOverrideBuilderStrategy {
     private val haveFakeOverrides = mutableSetOf<IrClass>()
     override val propertyOverriddenSymbols = mutableMapOf<IrOverridableMember, List<IrSymbol>>()
