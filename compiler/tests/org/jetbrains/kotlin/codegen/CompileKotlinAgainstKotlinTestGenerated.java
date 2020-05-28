@@ -268,6 +268,11 @@ public class CompileKotlinAgainstKotlinTestGenerated extends AbstractCompileKotl
         runTest("compiler/testData/compileKotlinAgainstKotlin/nestedClass.kt");
     }
 
+    @TestMetadata("nestedClassInAnnotationArgument.kt")
+    public void testNestedClassInAnnotationArgument() throws Exception {
+        runTest("compiler/testData/compileKotlinAgainstKotlin/nestedClassInAnnotationArgument.kt");
+    }
+
     @TestMetadata("nestedEnum.kt")
     public void testNestedEnum() throws Exception {
         runTest("compiler/testData/compileKotlinAgainstKotlin/nestedEnum.kt");
@@ -296,6 +301,16 @@ public class CompileKotlinAgainstKotlinTestGenerated extends AbstractCompileKotl
     @TestMetadata("platformTypes.kt")
     public void testPlatformTypes() throws Exception {
         runTest("compiler/testData/compileKotlinAgainstKotlin/platformTypes.kt");
+    }
+
+    @TestMetadata("privateCompanionObjectValInDifferentModule.kt")
+    public void testPrivateCompanionObjectValInDifferentModule() throws Exception {
+        runTest("compiler/testData/compileKotlinAgainstKotlin/privateCompanionObjectValInDifferentModule.kt");
+    }
+
+    @TestMetadata("privateTopLevelValInDifferentModule.kt")
+    public void testPrivateTopLevelValInDifferentModule() throws Exception {
+        runTest("compiler/testData/compileKotlinAgainstKotlin/privateTopLevelValInDifferentModule.kt");
     }
 
     @TestMetadata("propertyReference.kt")

@@ -16,6 +16,9 @@ import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirFile
 import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.dependenciesWithoutSelf
+import org.jetbrains.kotlin.fir.extensions.BunchOfRegisteredExtensions
+import org.jetbrains.kotlin.fir.extensions.extensionService
+import org.jetbrains.kotlin.fir.extensions.registerExtensions
 import org.jetbrains.kotlin.fir.java.FirJavaModuleBasedSession
 import org.jetbrains.kotlin.fir.java.FirLibrarySession
 import org.jetbrains.kotlin.fir.java.FirProjectSessionProvider
@@ -30,7 +33,10 @@ import org.jetbrains.kotlin.fir.resolve.firProvider
 import org.jetbrains.kotlin.fir.resolve.firSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.impl.FirCompositeSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.impl.FirProviderImpl
-import org.jetbrains.kotlin.fir.resolve.transformers.FirTotalResolveTransformer
+import org.jetbrains.kotlin.fir.resolve.transformers.FirTotalResolveProcessor
+import org.jetbrains.kotlin.fir.resolve.transformers.FirTransformerBasedResolveProcessor
+import org.jetbrains.kotlin.fir.resolve.transformers.FirGlobalResolveProcessor
+import org.jetbrains.kotlin.fir.resolve.transformers.createAllTransformerBasedResolveProcessors
 import org.jetbrains.kotlin.fir.scopes.impl.FirCompositeScope
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.caches.project.IdeaModuleInfo
@@ -68,7 +74,9 @@ abstract class AbstractFirMultiModuleResolveTest : AbstractMultiModuleTest() {
 
     private fun createSession(module: Module, provider: FirProjectSessionProvider): FirJavaModuleBasedSession {
         val moduleInfo = module.productionSourceInfo()!!
-        return FirJavaModuleBasedSession(moduleInfo, provider, moduleInfo.contentScope())
+        return FirJavaModuleBasedSession(moduleInfo, provider, moduleInfo.contentScope()).also {
+            it.extensionService.registerExtensions(BunchOfRegisteredExtensions.empty())
+        }
     }
 
     private fun createLibrarySession(moduleInfo: IdeaModuleInfo, provider: FirProjectSessionProvider): FirLibrarySession {
@@ -78,7 +86,7 @@ abstract class AbstractFirMultiModuleResolveTest : AbstractMultiModuleTest() {
 
     private fun doFirResolveTest(dirPath: String) {
         val firFilesPerSession = mutableMapOf<FirJavaModuleBasedSession, List<FirFile>>()
-        val totalTransformerPerSession = mutableMapOf<FirJavaModuleBasedSession, FirTotalResolveTransformer>()
+        val processorsPerSession = mutableMapOf<FirJavaModuleBasedSession, List<FirTransformerBasedResolveProcessor>>()
         val sessions = mutableListOf<FirJavaModuleBasedSession>()
         val provider = FirProjectSessionProvider(project)
         for (module in project.allModules().drop(1)) {
@@ -110,7 +118,7 @@ abstract class AbstractFirMultiModuleResolveTest : AbstractMultiModuleTest() {
                 firFiles += firFile
             }
             firFilesPerSession[session] = firFiles
-            totalTransformerPerSession[session] = FirTotalResolveTransformer()
+            processorsPerSession[session] = createAllTransformerBasedResolveProcessors(session)
         }
         println("Raw fir up, files: ${firFilesPerSession.values.flatten().size}")
 
@@ -130,9 +138,10 @@ abstract class AbstractFirMultiModuleResolveTest : AbstractMultiModuleTest() {
         for (phaseIndex in 1 until FirResolvePhase.values().size) {
             for (session in sessions) {
                 val firFiles = firFilesPerSession[session]!!
-                val transformer = totalTransformerPerSession[session]!!
+                val processors = processorsPerSession[session]!!
                 for (file in firFiles) {
-                    transformer.transformers[phaseIndex - 1].visitFile(file, null)
+                    val processor = processors[phaseIndex - 1]
+                    processor.processFile(file)
                 }
             }
         }

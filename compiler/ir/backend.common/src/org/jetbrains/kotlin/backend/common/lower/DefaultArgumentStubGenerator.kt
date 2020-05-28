@@ -250,7 +250,7 @@ open class DefaultParameterInjector(
 
         val (symbol, params) = parametersForCall(expression) ?: return expression
         for (i in 0 until expression.typeArgumentsCount) {
-            log { "${symbol.descriptor}[$i]: ${expression.getTypeArgument(i)}" }
+            log { "$symbol[$i]: ${expression.getTypeArgument(i)}" }
         }
         symbol.owner.typeParameters.forEach { log { "${symbol.owner}[${it.index}] : $it" } }
 
@@ -380,7 +380,7 @@ class DefaultParameterCleaner(
     }
 
     override fun transformFlat(declaration: IrDeclaration): List<IrDeclaration>? {
-        if (declaration is IrValueParameter && !context.scriptMode && declaration.defaultValue != null) {
+        if (declaration is IrValueParameter && declaration.defaultValue != null) {
             if (replaceDefaultValuesWithStubs) {
                 if (context.mapping.defaultArgumentsOriginalFunction[declaration.parent as IrFunction] == null) {
                     declaration.defaultValue =

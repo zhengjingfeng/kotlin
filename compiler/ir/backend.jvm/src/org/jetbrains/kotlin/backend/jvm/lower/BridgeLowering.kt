@@ -14,8 +14,8 @@ import org.jetbrains.kotlin.backend.common.phaser.makeIrFilePhase
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.backend.jvm.codegen.isJvmInterface
+import org.jetbrains.kotlin.backend.jvm.ir.copyCorrespondingPropertyFrom
 import org.jetbrains.kotlin.backend.jvm.ir.eraseTypeParameters
-import org.jetbrains.kotlin.backend.jvm.ir.erasedUpperBound
 import org.jetbrains.kotlin.backend.jvm.ir.isJvmAbstract
 import org.jetbrains.kotlin.backend.jvm.lower.inlineclasses.unboxInlineClass
 import org.jetbrains.kotlin.codegen.AsmUtil
@@ -177,8 +177,10 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
             // For lambda classes, we move overrides from the `invoke` function to its bridge. This will allow us to avoid boxing
             // the return type of `invoke` in codegen for lambdas with primitive return type. This does not apply to lambdas returning
             // inline class types erasing to Any, which we need to box.
-            if (member.name == OperatorNameConventions.INVOKE && declaration.origin == JvmLoweredDeclarationOrigin.LAMBDA_IMPL
-                && !member.returnType.isInlineClassErasingToAny) {
+            if (member.name == OperatorNameConventions.INVOKE
+                && (declaration.origin == JvmLoweredDeclarationOrigin.LAMBDA_IMPL || declaration.origin == JvmLoweredDeclarationOrigin.FUNCTION_REFERENCE_IMPL)
+                && !member.returnType.isInlineClassErasingToAny
+            ) {
                 member.overriddenSymbols = listOf()
             }
         }
@@ -341,14 +343,10 @@ private class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass,
             returnType = irFunction.returnType
             isFakeOverride = false
         }.apply {
-            // If the function is a property accessor, link in the new function as the new accessor for the property.
-            correspondingPropertySymbol = irFunction.correspondingPropertySymbol?.also {
-                if (irFunction.isGetter) {
-                    it.owner.getter = this
-                } else {
-                    it.owner.setter = this
-                }
-            }
+            // If the function is a property accessor, we need to mark the abstract stub as a property accessor as well.
+            // However, we cannot link in the new function as the new accessor for the property, since there might still
+            // be references to the original fake override stub.
+            copyCorrespondingPropertyFrom(irFunction)
             copyParametersWithErasure(this@addAbstractMethodStub, irFunction, needsArgumentBoxing)
         }
 

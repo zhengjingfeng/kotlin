@@ -295,12 +295,16 @@ class CompileKotlinAgainstCustomBinariesTest : AbstractKotlinCompilerIntegration
         doTestPreReleaseKotlinLibrary(K2JSCompiler(), "library", File(tmpdir, "usage.js"))
     }
 
-    fun testReleaseCompilerAgainstPreReleaseLibrarySkipVersionCheck() {
-        doTestPreReleaseKotlinLibrary(K2JVMCompiler(), "library", tmpdir, "-Xskip-metadata-version-check")
+    fun testReleaseCompilerAgainstPreReleaseLibrarySkipPrereleaseCheck() {
+        doTestPreReleaseKotlinLibrary(K2JVMCompiler(), "library", tmpdir, "-Xskip-prerelease-check")
     }
 
-    fun testReleaseCompilerAgainstPreReleaseLibraryJsSkipVersionCheck() {
-        doTestPreReleaseKotlinLibrary(K2JSCompiler(), "library", File(tmpdir, "usage.js"), "-Xskip-metadata-version-check")
+    fun testReleaseCompilerAgainstPreReleaseLibraryJsSkipPrereleaseCheck() {
+        doTestPreReleaseKotlinLibrary(K2JSCompiler(), "library", File(tmpdir, "usage.js"), "-Xskip-prerelease-check")
+    }
+
+    fun testReleaseCompilerAgainstPreReleaseLibrarySkipMetadataVersionCheck() {
+        doTestPreReleaseKotlinLibrary(K2JVMCompiler(), "library", tmpdir, "-Xskip-metadata-version-check")
     }
 
     fun testPreReleaseCompilerAgainstPreReleaseLibraryStableLanguageVersion() {
@@ -360,6 +364,10 @@ class CompileKotlinAgainstCustomBinariesTest : AbstractKotlinCompilerIntegration
 
     fun testWrongMetadataVersionJsSkipVersionCheck() {
         doTestKotlinLibraryWithWrongMetadataVersionJs("library", "-Xskip-metadata-version-check")
+    }
+
+    fun testWrongMetadataVersionSkipPrereleaseCheckHasNoEffect() {
+        doTestKotlinLibraryWithWrongMetadataVersion("library", null, "-Xskip-prerelease-check")
     }
 
     fun testRequireKotlin() {
@@ -430,32 +438,12 @@ class CompileKotlinAgainstCustomBinariesTest : AbstractKotlinCompilerIntegration
 
         compileKotlin("source.kt", tmpdir, listOf(tmpdir))
 
-        var debugInfo: String? = null
         val resultFile = File(tmpdir.absolutePath, "test/B.class")
         ClassReader(resultFile.readBytes()).accept(object : ClassVisitor(Opcodes.API_VERSION) {
             override fun visitSource(source: String?, debug: String?) {
-                debugInfo = debug
+                assertEquals(null, debug)
             }
         }, 0)
-
-        val expected = """
-            SMAP
-            source.kt
-            Kotlin
-            *S Kotlin
-            *F
-            + 1 source.kt
-            test/B
-            *L
-            1#1,13:1
-            *E
-        """.trimIndent() + "\n"
-
-        if (GENERATE_SMAP) {
-            assertEquals(expected, debugInfo)
-        } else {
-            assertEquals(null, debugInfo)
-        }
     }
 
     /* Regression test for KT-37107: compile against .class file without any constructors. */

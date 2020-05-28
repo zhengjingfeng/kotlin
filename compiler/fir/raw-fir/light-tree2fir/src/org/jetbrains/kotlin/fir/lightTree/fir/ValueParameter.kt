@@ -6,13 +6,14 @@
 package org.jetbrains.kotlin.fir.lightTree.fir
 
 import org.jetbrains.kotlin.fir.FirSession
-import org.jetbrains.kotlin.fir.builder.convertToArrayType
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirValueParameter
 import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyGetter
 import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertySetter
+import org.jetbrains.kotlin.fir.declarations.isFromVararg
 import org.jetbrains.kotlin.fir.diagnostics.DiagnosticKind
 import org.jetbrains.kotlin.fir.diagnostics.ConeSimpleDiagnostic
 import org.jetbrains.kotlin.fir.expressions.builder.buildQualifiedAccessExpression
@@ -37,9 +38,6 @@ class ValueParameter(
     fun toFirProperty(session: FirSession, callableId: CallableId): FirProperty {
         val name = this.firValueParameter.name
         var type = this.firValueParameter.returnTypeRef
-        if (this.firValueParameter.isVararg) {
-            type = type.convertToArrayType()
-        }
         if (type is FirImplicitTypeRef) {
             type = buildErrorTypeRef { diagnostic = ConeSimpleDiagnostic("Incomplete code", DiagnosticKind.Syntax) }
         }
@@ -47,6 +45,7 @@ class ValueParameter(
         return buildProperty {
             source = firValueParameter.source
             this.session = session
+            origin = FirDeclarationOrigin.Source
             returnTypeRef = type
             this.name = name
             initializer = buildQualifiedAccessExpression {
@@ -66,8 +65,10 @@ class ValueParameter(
                 isLateInit = false
             }
             annotations += this@ValueParameter.firValueParameter.annotations
-            getter = FirDefaultPropertyGetter(null, session, type, modifiers.getVisibility())
-            setter = if (this.isVar) FirDefaultPropertySetter(null, session, type, modifiers.getVisibility()) else null
+            getter = FirDefaultPropertyGetter(null, session, FirDeclarationOrigin.Source, type, modifiers.getVisibility())
+            setter = if (this.isVar) FirDefaultPropertySetter(null, session, FirDeclarationOrigin.Source, type, modifiers.getVisibility()) else null
+        }.apply {
+            this.isFromVararg = firValueParameter.isVararg
         }
     }
 }

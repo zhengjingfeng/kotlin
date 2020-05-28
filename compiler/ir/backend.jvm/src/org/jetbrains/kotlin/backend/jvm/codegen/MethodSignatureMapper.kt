@@ -12,12 +12,10 @@ import org.jetbrains.kotlin.backend.common.lower.parentsWithSelf
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.backend.jvm.ir.getJvmNameFromAnnotation
-import org.jetbrains.kotlin.backend.jvm.ir.hasJvmDefault
 import org.jetbrains.kotlin.backend.jvm.ir.isCompiledToJvmDefault
 import org.jetbrains.kotlin.backend.jvm.ir.propertyIfAccessor
-import org.jetbrains.kotlin.backend.jvm.lower.*
+import org.jetbrains.kotlin.backend.jvm.lower.suspendFunctionOriginal
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
-import org.jetbrains.kotlin.codegen.AsmUtil
 import org.jetbrains.kotlin.codegen.JvmCodegenUtil
 import org.jetbrains.kotlin.codegen.replaceValueParametersIn
 import org.jetbrains.kotlin.codegen.signature.BothSignatureWriter
@@ -88,7 +86,7 @@ class MethodSignatureMapper(private val context: JvmBackendContext) {
             if ((propertyParent.isEnumClass || propertyParent.isEnumEntry) && (propertyName == "name" || propertyName == "ordinal"))
                 return propertyName
 
-            val accessorName = if (function.isPropertyGetter) JvmAbi.getterName(propertyName) else JvmAbi.setterName(propertyName)
+            val accessorName = if (function.isGetter) JvmAbi.getterName(propertyName) else JvmAbi.setterName(propertyName)
             return mangleMemberNameIfRequired(accessorName, function)
         }
 
@@ -159,26 +157,17 @@ class MethodSignatureMapper(private val context: JvmBackendContext) {
     }
 
     private fun hasVoidReturnType(function: IrFunction): Boolean =
-        function is IrConstructor || (function.returnType.isUnit() && !function.isPropertyGetter)
-
-    private val IrFunction.isPropertyGetter: Boolean
-        get() = isPropertyAccessor && valueParameters.isEmpty()
+        function is IrConstructor || (function.returnType.isUnit() && !function.isGetter)
 
     // Copied from KotlinTypeMapper.forceBoxedReturnType.
-    private fun forceBoxedReturnType(function: IrFunction): Boolean {
-        if (isBoxMethodForInlineClass(function)) return true
-
-        return isJvmPrimitiveOrInlineClass(function.returnType) &&
-                function is IrSimpleFunction && function.allOverridden().any { !isJvmPrimitiveOrInlineClass(it.returnType) }
-    }
+    private fun forceBoxedReturnType(function: IrFunction): Boolean = isBoxMethodForInlineClass(function) ||
+            function is IrSimpleFunction && function.returnType.isPrimitiveType() &&
+            function.allOverridden().any { !it.returnType.isPrimitiveType() }
 
     private fun isBoxMethodForInlineClass(function: IrFunction): Boolean =
         function.parent.let { it is IrClass && it.isInline } &&
                 function.origin == JvmLoweredDeclarationOrigin.SYNTHETIC_INLINE_CLASS_MEMBER &&
                 function.name.asString() == "box-impl"
-
-    private fun isJvmPrimitiveOrInlineClass(type: IrType): Boolean =
-        type.isPrimitiveType() || type.getClass()?.isInline == true
 
     fun mapSignatureSkipGeneric(function: IrFunction): JvmMethodSignature =
         mapSignature(function, true)

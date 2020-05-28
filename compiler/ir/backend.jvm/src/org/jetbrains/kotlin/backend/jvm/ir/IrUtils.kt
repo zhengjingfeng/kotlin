@@ -17,12 +17,14 @@ import org.jetbrains.kotlin.backend.jvm.lower.inlineclasses.unboxInlineClass
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.codegen.inline.coroutines.FOR_INLINE_SUFFIX
 import org.jetbrains.kotlin.config.JvmDefaultMode
+import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.descriptors.deserialization.PLATFORM_DEPENDENT_ANNOTATION_FQ_NAME
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.Scope
+import org.jetbrains.kotlin.ir.builders.declarations.buildProperty
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.descriptors.IrBuiltIns
 import org.jetbrains.kotlin.ir.expressions.*
@@ -38,6 +40,7 @@ import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.load.java.JavaVisibilities
+import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
 import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.jvm.annotations.JVM_DEFAULT_FQ_NAME
@@ -167,18 +170,6 @@ fun IrFunction.getJvmVisibilityOfDefaultArgumentStub() =
 
 fun IrValueParameter.isInlineParameter(type: IrType = this.type) =
     index >= 0 && !isNoinline && !type.isNullable() && (type.isFunction() || type.isSuspendFunctionTypeOrSubtype())
-
-val IrType.isBoxedArray: Boolean
-    get() = classOrNull?.owner?.fqNameWhenAvailable == KotlinBuiltIns.FQ_NAMES.array.toSafe()
-
-fun IrType.getArrayElementType(irBuiltIns: IrBuiltIns): IrType =
-    if (isBoxedArray)
-        ((this as IrSimpleType).arguments.single() as IrTypeProjection).type
-    else {
-        val classifier = this.classOrNull!!
-        irBuiltIns.primitiveArrayElementTypes[classifier]
-            ?: throw AssertionError("Primitive array expected: $classifier")
-    }
 
 val IrStatementOrigin?.isLambda: Boolean
     get() = this == IrStatementOrigin.LAMBDA || this == IrStatementOrigin.ANONYMOUS_FUNCTION
@@ -318,4 +309,32 @@ fun firstSuperMethodFromKotlin(
         val owner = it.owner
         owner.modality != Modality.ABSTRACT && owner.overrides(implementation)
     }
+}
+
+// MethodSignatureMapper uses the corresponding property of a function to determine correct names
+// for property accessors.
+fun IrSimpleFunction.copyCorrespondingPropertyFrom(source: IrSimpleFunction) {
+    val property = source.correspondingPropertySymbol?.owner ?: return
+    val target = this
+
+    correspondingPropertySymbol = buildProperty(property.symbol.descriptor) {
+        name = property.name
+        updateFrom(property)
+    }.apply {
+        parent = target.parent
+        when {
+            source.isGetter -> getter = target
+            source.isSetter -> setter = target
+            else -> error("Orphaned property getter/setter: ${source.render()}")
+        }
+    }.symbol
+}
+
+fun IrProperty.needsAccessor(accessor: IrSimpleFunction): Boolean = when {
+    // Properties in annotation classes become abstract methods named after the property.
+    (parent as? IrClass)?.kind == ClassKind.ANNOTATION_CLASS -> true
+    // @JvmField properties have no getters/setters
+    backingField?.hasAnnotation(JvmAbi.JVM_FIELD_ANNOTATION_FQ_NAME) == true -> false
+    // We do not produce default accessors for private fields
+    else -> accessor.origin != IrDeclarationOrigin.DEFAULT_PROPERTY_ACCESSOR || !Visibilities.isPrivate(accessor.visibility)
 }

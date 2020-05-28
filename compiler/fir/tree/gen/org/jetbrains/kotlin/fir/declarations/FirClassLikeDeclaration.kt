@@ -18,10 +18,12 @@ import org.jetbrains.kotlin.fir.visitors.*
  * DO NOT MODIFY IT MANUALLY
  */
 
-interface FirClassLikeDeclaration<F : FirClassLikeDeclaration<F>> : FirDeclaration, FirStatement, FirSymbolOwner<F> {
+interface FirClassLikeDeclaration<F : FirClassLikeDeclaration<F>> : FirAnnotatedDeclaration, FirStatement, FirSymbolOwner<F> {
     override val source: FirSourceElement?
     override val session: FirSession
     override val resolvePhase: FirResolvePhase
+    override val origin: FirDeclarationOrigin
+    override val attributes: FirDeclarationAttributes
     override val annotations: List<FirAnnotationCall>
     override val symbol: FirClassLikeSymbol<F>
 

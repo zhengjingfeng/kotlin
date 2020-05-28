@@ -31,24 +31,32 @@ class ConstraintIncorporator(
         fun addNewIncorporatedConstraint(
             lowerType: KotlinTypeMarker,
             upperType: KotlinTypeMarker,
-            shouldTryUseDifferentFlexibilityForUpperType: Boolean
+            shouldTryUseDifferentFlexibilityForUpperType: Boolean,
+            isFromNullabilityConstraint: Boolean = false
         )
 
         fun addNewIncorporatedConstraint(typeVariable: TypeVariableMarker, type: KotlinTypeMarker, constraintContext: ConstraintContext)
     }
 
+    fun incorporateIntoOtherConstraints(c: Context, typeVariable: TypeVariableMarker, constraint: Constraint) {
+        // we shouldn't incorporate recursive constraint -- It is too dangerous
+        if (c.areThereRecursiveConstraints(typeVariable, constraint)) return
+
+        c.insideOtherConstraint(typeVariable, constraint)
+    }
+
     // \alpha is typeVariable, \beta -- other type variable registered in ConstraintStorage
     fun incorporate(c: Context, typeVariable: TypeVariableMarker, constraint: Constraint) {
         // we shouldn't incorporate recursive constraint -- It is too dangerous
-        with(c) {
-            val freshTypeConstructor = typeVariable.freshTypeConstructor()
-            if (constraint.type.contains { it.typeConstructor() == freshTypeConstructor }) return
-        }
+        if (c.areThereRecursiveConstraints(typeVariable, constraint)) return
 
         c.directWithVariable(typeVariable, constraint)
         c.otherInsideMyConstraint(typeVariable, constraint)
         c.insideOtherConstraint(typeVariable, constraint)
     }
+
+    private fun Context.areThereRecursiveConstraints(typeVariable: TypeVariableMarker, constraint: Constraint) =
+        constraint.type.contains { it.typeConstructor() == typeVariable.freshTypeConstructor() }
 
     // A <:(=) \alpha <:(=) B => A <: B
     private fun Context.directWithVariable(
@@ -62,7 +70,7 @@ class ConstraintIncorporator(
         if (constraint.kind != ConstraintKind.LOWER) {
             getConstraintsForVariable(typeVariable).forEach {
                 if (it.kind != ConstraintKind.UPPER) {
-                    addNewIncorporatedConstraint(it.type, constraint.type, shouldBeTypeVariableFlexible)
+                    addNewIncorporatedConstraint(it.type, constraint.type, shouldBeTypeVariableFlexible, it.isNullabilityConstraint)
                 }
             }
         }
@@ -231,7 +239,10 @@ class ConstraintIncorporator(
 
         val inputTypePosition = baseConstraint.position.from.safeAs<OnlyInputTypeConstraintPosition>()
 
-        val isNullabilityConstraint = isUsefulForNullabilityConstraint && newConstraint.isNullableNothing()
+        val isNewConstraintUsefulForNullability = isUsefulForNullabilityConstraint && newConstraint.isNullableNothing()
+        val isOtherConstraintUsefulForNullability = otherConstraint.isNullabilityConstraint && otherConstraint.type.isNullableNothing()
+        val isNullabilityConstraint = isNewConstraintUsefulForNullability || isOtherConstraintUsefulForNullability
+
         val constraintContext = ConstraintContext(kind, derivedFrom, inputTypePosition, isNullabilityConstraint)
 
         addNewIncorporatedConstraint(targetVariable, newConstraint, constraintContext)

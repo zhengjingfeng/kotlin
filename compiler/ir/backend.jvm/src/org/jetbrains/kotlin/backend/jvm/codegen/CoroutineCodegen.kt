@@ -44,9 +44,9 @@ internal fun MethodNode.acceptWithStateMachine(
     val languageVersionSettings = state.languageVersionSettings
     assert(languageVersionSettings.isReleaseCoroutines()) { "Experimental coroutines are unsupported in JVM_IR backend" }
     val element = if (irFunction.isSuspend)
-        irFunction.symbol.descriptor.psiElement ?: classCodegen.irClass.descriptor.psiElement
+        irFunction.psiElement ?: classCodegen.irClass.psiElement
     else
-        classCodegen.context.suspendLambdaToOriginalFunctionMap[classCodegen.irClass.attributeOwnerId]!!.symbol.descriptor.psiElement
+        classCodegen.context.suspendLambdaToOriginalFunctionMap[classCodegen.irClass.attributeOwnerId]!!.psiElement
     val visitor = CoroutineTransformerMethodVisitor(
         methodVisitor, access, name, desc, signature, exceptions.toTypedArray(),
         obtainClassBuilderForCoroutineState = obtainContinuationClassBuilder,
@@ -110,12 +110,18 @@ internal fun IrFunction.isInvokeSuspendOfContinuation(): Boolean =
     name.asString() == INVOKE_SUSPEND_METHOD_NAME && parentAsClass.origin == JvmLoweredDeclarationOrigin.CONTINUATION_CLASS
 
 private fun IrFunction.isInvokeOfSuspendCallableReference(): Boolean =
-    isSuspend && name.asString() == "invoke" && parentAsClass.origin == JvmLoweredDeclarationOrigin.FUNCTION_REFERENCE_IMPL
+    isSuspend && name.asString().let { name -> name == "invoke" || name.startsWith("invoke-") }
+            && parentAsClass.origin == JvmLoweredDeclarationOrigin.FUNCTION_REFERENCE_IMPL
 
 private fun IrFunction.isBridgeToSuspendImplMethod(): Boolean =
     isSuspend && this is IrSimpleFunction && parentAsClass.functions.any {
         it.name.asString() == name.asString() + SUSPEND_IMPL_NAME_SUFFIX && it.attributeOwnerId == attributeOwnerId
     }
+
+private fun IrFunction.isStaticInlineClassReplacementDelegatingCall(): Boolean =
+    this is IrAttributeContainer && origin != JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT &&
+            parentAsClass.declarations.find { it is IrAttributeContainer && it.attributeOwnerId == attributeOwnerId && it !== this }
+                ?.origin == JvmLoweredDeclarationOrigin.STATIC_INLINE_CLASS_REPLACEMENT
 
 internal fun IrFunction.shouldContainSuspendMarkers(): Boolean = !isInvokeSuspendOfContinuation() &&
         // These are tail-call bridges and do not require any bytecode modifications.
@@ -129,7 +135,8 @@ internal fun IrFunction.shouldContainSuspendMarkers(): Boolean = !isInvokeSuspen
         origin != IrDeclarationOrigin.BRIDGE_SPECIAL &&
         origin != IrDeclarationOrigin.DELEGATED_MEMBER &&
         !isInvokeOfSuspendCallableReference() &&
-        !isBridgeToSuspendImplMethod()
+        !isBridgeToSuspendImplMethod() &&
+        !isStaticInlineClassReplacementDelegatingCall()
 
 internal fun IrFunction.hasContinuation(): Boolean = isSuspend && shouldContainSuspendMarkers() &&
         // This is inline-only function

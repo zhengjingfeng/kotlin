@@ -5,20 +5,28 @@
 
 package org.jetbrains.kotlin.fir.declarations
 
-import java.util.*
-
 enum class FirResolvePhase {
     RAW_FIR,
+    ANNOTATIONS_FOR_PLUGINS, // run only if some extensions are registered
+//    FIRST_PLUGIN_GENERATION, // plugin phase
     IMPORTS,
     SUPER_TYPES,
     SEALED_CLASS_INHERITORS,
     TYPES,
+    EXTENSION_STATUS_UPDATE,
     STATUS,
     CONTRACTS,
     IMPLICIT_TYPES_BODY_RESOLVE,
     BODY_RESOLVE;
 
-    val requiredToLaunch: FirResolvePhase get() = if (this in bodyResolvePhases) STATUS else values()[ordinal - 1]
+    val requiredToLaunch: FirResolvePhase
+        get() = when (this) {
+            RAW_FIR -> RAW_FIR
+            IMPORTS -> RAW_FIR
+            STATUS -> TYPES
+            IMPLICIT_TYPES_BODY_RESOLVE, BODY_RESOLVE -> STATUS
+            else -> values()[ordinal - 1]
+        }
 
     val next: FirResolvePhase get() = values()[ordinal + 1]
 
@@ -26,7 +34,5 @@ enum class FirResolvePhase {
         // Short-cut
         val DECLARATIONS = STATUS
         val ANALYZED_DEPENDENCIES = BODY_RESOLVE
-
-        private val bodyResolvePhases = EnumSet.copyOf(setOf(IMPLICIT_TYPES_BODY_RESOLVE, BODY_RESOLVE))
     }
 }

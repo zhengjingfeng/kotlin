@@ -14,6 +14,8 @@ import org.jetbrains.kotlin.scripting.ide_services.test_util.toList
 import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty0
 import kotlin.script.experimental.api.*
 
 class ReplCompletionAndErrorsAnalysisTest : TestCase() {
@@ -43,7 +45,7 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
             code = "v.mema."
             cursor = 7
             expect {
-                completionsMode(ComparisonType.INCLUDES)
+                completions.mode(ComparisonType.INCLUDES)
                 addCompletion("memx", "memx", "Int", "property")
                 addCompletion("memy", "memy", "String", "property")
             }
@@ -69,7 +71,7 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
             code = testCode
             cursor = testCursor ?: testCode.length
             expect {
-                completionsMode(ComparisonType.EQUALS)
+                completions.mode(ComparisonType.EQUALS)
             }
         }
 
@@ -97,7 +99,7 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
             cursor = 17
             code = "import java.lang."
             expect {
-                completionsMode(ComparisonType.INCLUDES)
+                completions.mode(ComparisonType.INCLUDES)
                 addCompletion("Process", "Process", " (java.lang)", "class")
             }
         }
@@ -173,7 +175,7 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
                 val v = BClass("KKK", AClass(5, "25"))
             """.trimIndent()
             expect {
-                errorsMode(ComparisonType.EQUALS)
+                errors.mode(ComparisonType.EQUALS)
             }
         }
 
@@ -184,10 +186,10 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
                 val c = foob
             """.trimIndent()
             expect {
-                addError(1, 16, 1, 20, "Type mismatch: inferred type is String but Int was expected", "ERROR")
-                addError(1, 22, 1, 26, "The floating-point literal does not conform to the expected type String", "ERROR")
-                addError(2, 14, 2, 19, "Type mismatch: inferred type is String but Int was expected", "ERROR")
-                addError(3, 9, 3, 13, "Unresolved reference: foob", "ERROR")
+                addError(1, 16, "Type mismatch: inferred type is String but Int was expected", "ERROR")
+                addError(1, 22, "The floating-point literal does not conform to the expected type String", "ERROR")
+                addError(2, 14, "Type mismatch: inferred type is String but Int was expected", "ERROR")
+                addError(3, 9, "Unresolved reference: foob", "ERROR")
             }
         }
     }
@@ -214,7 +216,21 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
         }
     }
 
-    private class TestConf {
+    @Test
+    fun testAnalyze() = test {
+        run {
+            code = """
+                val foo = 42
+                foo
+            """.trimIndent()
+            expect {
+                errors.mode(ComparisonType.EQUALS)
+                resultType = "Int"
+            }
+        }
+    }
+
+    class TestConf {
         private val runs = mutableListOf<Run>()
 
         fun run(setup: (Run).() -> Unit) {
@@ -258,44 +274,29 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
             }
 
             class Expected(private val run: Run) {
-                private val variants = mutableListOf<SourceCodeCompletionVariant>()
-                private var _completionsMode: ComparisonType = ComparisonType.DONT_CHECK
-                fun completionsMode(mode: ComparisonType) {
-                    _completionsMode = mode
-                }
-
+                val completions = ExpectedList<SourceCodeCompletionVariant>(run::doComplete)
                 fun addCompletion(text: String, displayText: String, tail: String, icon: String) {
-                    if (_completionsMode == ComparisonType.DONT_CHECK)
-                        _completionsMode = ComparisonType.EQUALS
-                    run.doComplete
-                    variants.add(SourceCodeCompletionVariant(text, displayText, tail, icon))
+                    completions.add(SourceCodeCompletionVariant(text, displayText, tail, icon))
                 }
 
-                private val errors = mutableListOf<ScriptDiagnostic>()
-                private var _errorsMode: ComparisonType = ComparisonType.DONT_CHECK
-                fun errorsMode(mode: ComparisonType) {
-                    _errorsMode = mode
-                }
-
-                fun addError(startLine: Int, startCol: Int, endLine: Int, endCol: Int, message: String, severity: String) {
-                    if (_errorsMode == ComparisonType.DONT_CHECK)
-                        _errorsMode = ComparisonType.EQUALS
-                    run.doErrorCheck
+                val errors = ExpectedList<ScriptDiagnostic>(run::doErrorCheck)
+                fun addError(startLine: Int, startCol: Int, message: String, severity: String) {
                     errors.add(
                         ScriptDiagnostic(
                             ScriptDiagnostic.unspecifiedError,
                             message,
                             ScriptDiagnostic.Severity.valueOf(severity),
                             location = SourceCode.Location(
-                                SourceCode.Position(startLine, startCol),
-                                SourceCode.Position(endLine, endCol)
+                                SourceCode.Position(startLine, startCol)
                             )
                         )
                     )
                 }
 
+                var resultType: String? by ExpectedNullableVar(run::doErrorCheck)
+
                 fun collect(): ExpectedResult {
-                    return ExpectedResult(variants, _completionsMode, errors, _errorsMode)
+                    return ExpectedResult(completions, errors, resultType)
                 }
             }
 
@@ -317,12 +318,46 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
         val code: String,
         val doCompile: Boolean,
         val doComplete: Boolean,
-        val doErrorCheck: Boolean
+        val doErrorCheck: Boolean,
     )
 
+    class ExpectedList<T>(private val runProperty: KProperty0<Unit>) {
+        val list = mutableListOf<T>()
+
+        private var _compMode = ComparisonType.DONT_CHECK
+        fun mode() = _compMode
+        fun mode(mode: ComparisonType) {
+            _compMode = mode
+        }
+
+        fun add(elem: T) {
+            if (_compMode == ComparisonType.DONT_CHECK)
+                _compMode = ComparisonType.EQUALS
+            runProperty.get()
+            list.add(elem)
+        }
+    }
+
+    class ExpectedNullableVar<T>(private val runProperty: KProperty0<Unit>) {
+        private var variable: T? = null
+
+        operator fun getValue(thisRef: Any?, property: KProperty<*>): T? = variable
+        operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {
+            runProperty.get()
+            variable = value
+        }
+    }
+
     data class ExpectedResult(
-        val completions: List<SourceCodeCompletionVariant>, val completionsCompType: ComparisonType,
-        val errors: List<ScriptDiagnostic>, val errorsCompType: ComparisonType
+        val completions: ExpectedList<SourceCodeCompletionVariant>,
+        val errors: ExpectedList<ScriptDiagnostic>,
+        val resultType: String?,
+    )
+
+    data class ActualResult(
+        val completions: List<SourceCodeCompletionVariant>,
+        val errors: List<ScriptDiagnostic>,
+        val resultType: String?,
     )
 
     private val currentLineCounter = AtomicInteger()
@@ -336,9 +371,9 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
     private suspend fun evaluateInRepl(
         compilationConfiguration: ScriptCompilationConfiguration,
         snippets: List<RunRequest>
-    ): List<ResultWithDiagnostics<Pair<List<SourceCodeCompletionVariant>, List<ScriptDiagnostic>>>> {
+    ): List<ResultWithDiagnostics<ActualResult>> {
         val compiler = KJvmReplCompilerWithIdeServices()
-        return snippets.map { (cursor, snippetText, doComplile, doComplete, doErrorCheck) ->
+        return snippets.map { (cursor, snippetText, doCompile, doComplete, doErrorCheck) ->
             val pos = SourceCode.Position(0, 0, cursor)
             val codeLine = nextCodeLine(snippetText)
             val completionRes = if (doComplete && cursor != null) {
@@ -348,19 +383,22 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
                 emptyList()
             }
 
-            val errorsRes = if (doErrorCheck) {
+            val analysisResult = if (doErrorCheck) {
                 val codeLineForErrorCheck = nextCodeLine(snippetText)
-                compiler.analyze(codeLineForErrorCheck, SourceCode.Position(0, 0), compilationConfiguration).toList()
+                compiler.analyze(codeLineForErrorCheck, SourceCode.Position(0, 0), compilationConfiguration).valueOrNull()
             } else {
-                emptyList()
-            }
+                null
+            }?: ReplAnalyzerResult()
 
-            if (doComplile) {
+            val errorsSequence = analysisResult[ReplAnalyzerResult.analysisDiagnostics]!!
+            val resultType = analysisResult[ReplAnalyzerResult.renderedResultType]
+
+            if (doCompile) {
                 val codeLineForCompilation = nextCodeLine(snippetText)
                 compiler.compile(codeLineForCompilation, compilationConfiguration)
             }
 
-            Pair(completionRes, errorsRes).asSuccess()
+            ActualResult(completionRes, errorsSequence.toList(), resultType).asSuccess()
         }
     }
 
@@ -390,14 +428,15 @@ class ReplCompletionAndErrorsAnalysisTest : TestCase() {
             when (res) {
                 is ResultWithDiagnostics.Failure -> Assert.fail("#$index: Expected result, got $res")
                 is ResultWithDiagnostics.Success -> {
-                    val (expectedCompletions, completionsCompType, expectedErrors, errorsCompType) = expectedIter.next()
-                    val (completionsRes, errorsRes) = res.value
+                    val (expectedCompletions, expectedErrors, expectedResultType) = expectedIter.next()
+                    val (completionsRes, errorsRes, resultType) = res.value
 
-                    checkLists(index, "completions", expectedCompletions, completionsRes, completionsCompType)
-                    val expectedErrorsWithPath = expectedErrors.map {
+                    checkLists(index, "completions", expectedCompletions.list, completionsRes, expectedCompletions.mode())
+                    val expectedErrorsWithPath = expectedErrors.list.map {
                         it.copy(sourcePath = errorsRes.firstOrNull()?.sourcePath)
                     }
-                    checkLists(index, "errors", expectedErrorsWithPath, errorsRes, errorsCompType)
+                    checkLists(index, "errors", expectedErrorsWithPath, errorsRes, expectedErrors.mode())
+                    assertEquals("Analysis result types are different", expectedResultType, resultType)
                 }
             }
         }

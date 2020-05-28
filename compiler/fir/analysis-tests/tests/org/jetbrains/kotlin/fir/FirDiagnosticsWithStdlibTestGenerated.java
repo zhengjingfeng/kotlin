@@ -68,6 +68,11 @@ public class FirDiagnosticsWithStdlibTestGenerated extends AbstractFirDiagnostic
         runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/companionLoad.kt");
     }
 
+    @TestMetadata("complexPostponedCfg.kt")
+    public void testComplexPostponedCfg() throws Exception {
+        runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/complexPostponedCfg.kt");
+    }
+
     @TestMetadata("components.kt")
     public void testComponents() throws Exception {
         runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/components.kt");
@@ -293,6 +298,11 @@ public class FirDiagnosticsWithStdlibTestGenerated extends AbstractFirDiagnostic
         @TestMetadata("beyoundCalls.kt")
         public void testBeyoundCalls() throws Exception {
             runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/callableReferences/beyoundCalls.kt");
+        }
+
+        @TestMetadata("coercionToUnit.kt")
+        public void testCoercionToUnit() throws Exception {
+            runTest("compiler/fir/analysis-tests/testData/resolveWithStdlib/callableReferences/coercionToUnit.kt");
         }
 
         @TestMetadata("companions.kt")

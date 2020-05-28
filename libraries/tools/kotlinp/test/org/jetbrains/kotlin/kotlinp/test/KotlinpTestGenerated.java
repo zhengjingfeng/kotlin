@@ -38,6 +38,11 @@ public class KotlinpTestGenerated extends AbstractKotlinpTest {
         runTest("libraries/tools/kotlinp/testData/Contracts.kt");
     }
 
+    @TestMetadata("FunInterface.kt")
+    public void testFunInterface() throws Exception {
+        runTest("libraries/tools/kotlinp/testData/FunInterface.kt");
+    }
+
     @TestMetadata("Lambda.kt")
     public void testLambda() throws Exception {
         runTest("libraries/tools/kotlinp/testData/Lambda.kt");
@@ -61,6 +66,11 @@ public class KotlinpTestGenerated extends AbstractKotlinpTest {
     @TestMetadata("NestedClasses.kt")
     public void testNestedClasses() throws Exception {
         runTest("libraries/tools/kotlinp/testData/NestedClasses.kt");
+    }
+
+    @TestMetadata("OptionalAnnotation.kt")
+    public void testOptionalAnnotation() throws Exception {
+        runTest("libraries/tools/kotlinp/testData/OptionalAnnotation.kt");
     }
 
     @TestMetadata("PlatformType.kt")

@@ -14,6 +14,7 @@ import org.jetbrains.kotlin.fir.references.builder.buildResolvedCallableReferenc
 import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.calls.Candidate
 import org.jetbrains.kotlin.fir.resolve.calls.FirNamedReferenceWithCandidate
+import org.jetbrains.kotlin.fir.resolve.calls.varargElementType
 import org.jetbrains.kotlin.fir.resolve.constructFunctionalTypeRef
 import org.jetbrains.kotlin.fir.resolve.inference.isBuiltinFunctionalType
 import org.jetbrains.kotlin.fir.resolve.inference.isSuspendFunctionType
@@ -133,34 +134,8 @@ class FirCallCompletionResultsWriterTransformer(
             }
             else -> {
                 resultType = typeRef.substituteTypeRef(subCandidate)
-                val argumentMapping = subCandidate.argumentMapping
-                val varargParameter = argumentMapping?.values?.firstOrNull { it.isVararg }
                 result.argumentList.transformArguments(this, subCandidate.createArgumentsMapping())
-                with(result.argumentList) call@{
-                    if (varargParameter != null) {
-                        // Create a FirVarargArgumentExpression for the vararg arguments
-                        val varargParameterTypeRef = varargParameter.returnTypeRef
-                        val resolvedArrayType = varargParameterTypeRef.substitute(subCandidate)
-                        val resolvedElementType = resolvedArrayType.arrayElementType(session)
-                        var firstIndex = this@call.arguments.size
-                        val newArgumentMapping = mutableMapOf<FirExpression, FirValueParameter>()
-                        val varargArgument = buildVarargArgumentsExpression {
-                            varargElementType = varargParameterTypeRef.withReplacedConeType(resolvedElementType)
-                            this.typeRef = varargParameterTypeRef.withReplacedConeType(resolvedArrayType)
-                            for ((i, arg) in this@call.arguments.withIndex()) {
-                                val valueParameter = argumentMapping[arg] ?: continue
-                                if (valueParameter.isVararg) {
-                                    firstIndex = min(firstIndex, i)
-                                    arguments += arg
-                                } else {
-                                    newArgumentMapping[arg] = valueParameter
-                                }
-                            }
-                        }
-                        newArgumentMapping[varargArgument] = varargParameter
-                        subCandidate.argumentMapping = newArgumentMapping
-                    }
-                }
+                subCandidate.handleVarargs(result.argumentList)
                 subCandidate.argumentMapping?.let {
                     result.replaceArgumentList(buildResolvedArgumentList(it))
                 }
@@ -178,6 +153,34 @@ class FirCallCompletionResultsWriterTransformer(
         }
 
         return result.compose()
+    }
+
+    private fun Candidate.handleVarargs(argumentList: FirArgumentList) {
+        val argumentMapping = this.argumentMapping
+        val varargParameter = argumentMapping?.values?.firstOrNull { it.isVararg }
+        if (varargParameter != null) {
+            // Create a FirVarargArgumentExpression for the vararg arguments
+            val varargParameterTypeRef = varargParameter.returnTypeRef
+            val resolvedArrayType = varargParameterTypeRef.substitute(this)
+            val resolvedElementType = resolvedArrayType.arrayElementType(session)
+            var firstIndex = argumentList.arguments.size
+            val newArgumentMapping = mutableMapOf<FirExpression, FirValueParameter>()
+            val varargArgument = buildVarargArgumentsExpression {
+                varargElementType = varargParameterTypeRef.withReplacedConeType(resolvedElementType)
+                this.typeRef = varargParameterTypeRef.withReplacedConeType(resolvedArrayType)
+                for ((i, arg) in argumentList.arguments.withIndex()) {
+                    val valueParameter = argumentMapping[arg] ?: continue
+                    if (valueParameter.isVararg) {
+                        firstIndex = min(firstIndex, i)
+                        arguments += arg
+                    } else {
+                        newArgumentMapping[arg] = valueParameter
+                    }
+                }
+            }
+            newArgumentMapping[varargArgument] = varargParameter
+            this.argumentMapping = newArgumentMapping
+        }
     }
 
     private fun <D : FirExpression> D.replaceTypeRefWithSubstituted(
@@ -277,7 +280,11 @@ class FirCallCompletionResultsWriterTransformer(
 
     private fun Candidate.createArgumentsMapping(): ExpectedArgumentType? {
         return argumentMapping?.map { (argument, valueParameter) ->
-            val expectedType = valueParameter.returnTypeRef.substitute(this)
+            val expectedType = if (valueParameter.isVararg) {
+                valueParameter.returnTypeRef.substitute(this).varargElementType(session)
+            } else {
+                valueParameter.returnTypeRef.substitute(this)
+            }
             argument.unwrapArgument() to expectedType
         }?.toMap()?.toExpectedType()
     }
@@ -291,6 +298,7 @@ class FirCallCompletionResultsWriterTransformer(
         val subCandidate = calleeReference.candidate
 
         delegatedConstructorCall.argumentList.transformArguments(this, calleeReference.candidate.createArgumentsMapping())
+        subCandidate.handleVarargs(delegatedConstructorCall.argumentList)
         subCandidate.argumentMapping?.let {
             delegatedConstructorCall.replaceArgumentList(buildResolvedArgumentList(it))
         }

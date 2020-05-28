@@ -5,6 +5,7 @@
 
 package templates
 
+import templates.ArrayOps.rangeDoc
 import templates.Family.*
 import templates.SequenceClass.*
 
@@ -57,7 +58,13 @@ object Ordering : TemplateGroupBase() {
         include(InvariantArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned)
     } builder {
         since("1.4")
-        doc { "Reverses elements of the ${f.collection} in the specified range in-place." }
+        doc {
+            """
+            Reverses elements of the ${f.collection} in the specified range in-place.
+            
+            ${rangeDoc(hasDefault = false, action = "reverse")}
+            """
+        }
         returns("Unit")
         body {
             """
@@ -425,7 +432,6 @@ object Ordering : TemplateGroupBase() {
         if (f != ArraysOfPrimitives) {
             appendStableSortNote()
         }
-
         specialFor(Sequences) {
             returns("SELF")
             doc {
@@ -434,6 +440,8 @@ object Ordering : TemplateGroupBase() {
             appendStableSortNote()
             sequenceClassification(intermediate, stateful)
         }
+        sample("samples.collections.Collections.Sorting.sortedBy")
+
         body {
             "return sortedWith(compareBy(selector))"
         }

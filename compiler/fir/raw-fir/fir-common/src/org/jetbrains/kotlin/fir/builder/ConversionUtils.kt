@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.contracts.FirContractDescription
 import org.jetbrains.kotlin.fir.contracts.builder.buildRawContractDescription
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirVariable
 import org.jetbrains.kotlin.fir.declarations.builder.*
@@ -23,24 +24,17 @@ import org.jetbrains.kotlin.fir.expressions.impl.FirStubStatement
 import org.jetbrains.kotlin.fir.expressions.impl.buildSingleExpressionBlock
 import org.jetbrains.kotlin.fir.references.FirNamedReference
 import org.jetbrains.kotlin.fir.references.builder.*
-import org.jetbrains.kotlin.fir.symbols.StandardClassIds
 import org.jetbrains.kotlin.fir.symbols.constructStarProjectedType
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.ConeStarProjection
 import org.jetbrains.kotlin.fir.types.FirTypeRef
-import org.jetbrains.kotlin.fir.types.FirUserTypeRef
 import org.jetbrains.kotlin.fir.types.builder.buildImplicitTypeRef
 import org.jetbrains.kotlin.fir.types.builder.buildResolvedTypeRef
-import org.jetbrains.kotlin.fir.types.builder.buildTypeProjectionWithVariance
-import org.jetbrains.kotlin.fir.types.builder.buildUserTypeRef
 import org.jetbrains.kotlin.fir.types.impl.*
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.types.expressions.OperatorConventions
 import org.jetbrains.kotlin.util.OperatorNameConventions
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 
 fun String.parseCharacter(): Char? {
     // Strip the quotes
@@ -280,6 +274,7 @@ fun generateTemporaryVariable(
     buildProperty {
         this.source = source
         this.session = session
+        origin = FirDeclarationOrigin.Source
         returnTypeRef = typeRef ?: buildImplicitTypeRef {
             this.source = source
         }
@@ -386,6 +381,7 @@ fun FirPropertyBuilder.generateAccessorsByDelegate(
         val returnTarget = FirFunctionTarget(null, isLambda = false)
         getter = buildPropertyAccessor {
             this.session = session
+            origin = FirDeclarationOrigin.Source
             returnTypeRef = buildImplicitTypeRef()
             isGetter = true
             status = FirDeclarationStatusImpl(Visibilities.UNKNOWN, Modality.FINAL)
@@ -412,11 +408,13 @@ fun FirPropertyBuilder.generateAccessorsByDelegate(
     if (isVar && (setter == null || setter is FirDefaultPropertyAccessor)) {
         setter = buildPropertyAccessor {
             this.session = session
+            origin = FirDeclarationOrigin.Source
             returnTypeRef = session.builtinTypes.unitType
             isGetter = false
             status = FirDeclarationStatusImpl(Visibilities.UNKNOWN, Modality.FINAL)
             val parameter = buildValueParameter {
                 this.session = session
+                origin = FirDeclarationOrigin.Source
                 returnTypeRef = buildImplicitTypeRef()
                 name = DELEGATED_SETTER_PARAM
                 symbol = FirVariableSymbol(this@generateAccessorsByDelegate.name)
@@ -444,18 +442,6 @@ fun FirPropertyBuilder.generateAccessorsByDelegate(
                     }
                 }
             )
-        }
-    }
-}
-
-fun FirTypeRef.convertToArrayType(): FirUserTypeRef = buildUserTypeRef {
-    source = this@convertToArrayType.source
-    isMarkedNullable = false
-    qualifier += FirQualifierPartImpl(StandardClassIds.Array.shortClassName).apply {
-        typeArguments += buildTypeProjectionWithVariance {
-            source = this@convertToArrayType.source
-            typeRef = this@convertToArrayType
-            variance = Variance.OUT_VARIANCE
         }
     }
 }

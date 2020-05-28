@@ -13,6 +13,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.builder.*
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationOrigin
 import org.jetbrains.kotlin.fir.declarations.FirVariable
 import org.jetbrains.kotlin.fir.declarations.builder.buildAnonymousFunction
 import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
@@ -87,7 +88,7 @@ class ExpressionsConverter(
                 CALL_EXPRESSION -> convertCallExpression(expression)
                 WHEN -> convertWhenExpression(expression)
                 ARRAY_ACCESS_EXPRESSION -> convertArrayAccessExpression(expression)
-                COLLECTION_LITERAL_EXPRESSION -> convertCollectionLiteralExpresion(expression)
+                COLLECTION_LITERAL_EXPRESSION -> convertCollectionLiteralExpression(expression)
                 STRING_TEMPLATE -> convertStringTemplate(expression)
                 is KtConstantExpressionElementType -> convertConstantExpression(expression)
                 REFERENCE_EXPRESSION -> convertSimpleNameExpression(expression)
@@ -133,6 +134,7 @@ class ExpressionsConverter(
         return buildAnonymousFunction {
             source = expressionSource
             session = baseSession
+            origin = FirDeclarationOrigin.Source
             returnTypeRef = implicitType
             receiverTypeRef = implicitType
             symbol = FirAnonymousFunctionSymbol()
@@ -149,6 +151,7 @@ class ExpressionsConverter(
                     val name = Name.special("<destruct>")
                     val multiParameter = buildValueParameter {
                         session = baseSession
+                        origin = FirDeclarationOrigin.Source
                         returnTypeRef = buildImplicitTypeRef()
                         this.name = name
                         symbol = FirVariableSymbol(name)
@@ -610,6 +613,7 @@ class ExpressionsConverter(
                 PROPERTY -> subjectVariable = (declarationsConverter.convertPropertyDeclaration(it) as FirVariable<*>).let { variable ->
                     buildProperty {
                         source = it.toFirSourceElement()
+                        origin = FirDeclarationOrigin.Source
                         session = baseSession
                         returnTypeRef = variable.returnTypeRef
                         name = variable.name
@@ -804,7 +808,7 @@ class ExpressionsConverter(
     /**
      * @see org.jetbrains.kotlin.parsing.KotlinExpressionParsing.parseCollectionLiteralExpression
      */
-    private fun convertCollectionLiteralExpresion(expression: LighterASTNode): FirExpression {
+    private fun convertCollectionLiteralExpression(expression: LighterASTNode): FirExpression {
         val firExpressionList = mutableListOf<FirExpression>()
         expression.forEachChildren {
             if (it.isExpression()) firExpressionList += getAsFirExpression<FirExpression>(it, "Incorrect collection literal argument")
@@ -1139,6 +1143,7 @@ class ExpressionsConverter(
      * @see org.jetbrains.kotlin.fir.builder.RawFirBuilder.Visitor.visitSuperExpression
      */
     private fun convertSuperExpression(superExpression: LighterASTNode): FirQualifiedAccessExpression {
+        val label: String? = superExpression.getLabelName()
         var superTypeRef: FirTypeRef = implicitType
         superExpression.forEachChildren {
             when (it.tokenType) {
@@ -1149,6 +1154,7 @@ class ExpressionsConverter(
         return buildQualifiedAccessExpression {
             source = superExpression.toFirSourceElement()
             calleeReference = buildExplicitSuperReference {
+                labelName = label
                 this.superTypeRef = superTypeRef
             }
         }

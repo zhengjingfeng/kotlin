@@ -149,11 +149,10 @@ class PostponedArgumentsAnalyzer(
 
         val subResolvedKtPrimitives = allReturnArguments.map {
             resolveKtPrimitive(
-                c.getBuilder(), it, lambda.returnType.let(::substitute), diagnosticHolder, ReceiverInfo.notReceiver, convertedType = null
-            ).apply {
-                if (this is LambdaWithTypeVariableAsExpectedTypeAtom)
-                    isReturnArgumentOfAnotherLambda = true
-            }
+                c.getBuilder(), it, lambda.returnType.let(::substitute),
+                diagnosticHolder, ReceiverInfo.notReceiver, convertedType = null,
+                inferenceSession
+            )
         }
 
         if (!returnArgumentsInfo.returnArgumentsExist) {

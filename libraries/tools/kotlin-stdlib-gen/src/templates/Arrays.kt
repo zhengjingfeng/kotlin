@@ -1,10 +1,11 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package templates
 
+import templates.DocExtensions.collection
 import templates.Family.*
 import templates.Ordering.appendStableSortNote
 import templates.Ordering.stableSortNote
@@ -52,7 +53,7 @@ object ArrayOps : TemplateGroupBase() {
             "get() = size - 1"
         }
         specialFor(ArraysOfUnsigned) {
-            // TODO: Make inlineOnly after KT-30185 is fixed.
+            // TODO: Make inlineOnly after KT-30015 is fixed.
             // InlineOnly properties currently are not inlined and may lead to IllegalAccessException
             // when accessed from an inline (or inlineOnly) method.
             // It is because the method body contains access call to inlineOnly property in nonpublic multifile part,
@@ -71,7 +72,7 @@ object ArrayOps : TemplateGroupBase() {
             "get() = IntRange(0, lastIndex)"
         }
         specialFor(ArraysOfUnsigned) {
-            // TODO: Make inlineOnly after KT-30185 is fixed.
+            // TODO: Make inlineOnly after KT-30015 is fixed.
             // InlineOnly properties currently are not inlined and may lead to IllegalAccessException
             // when accessed from an inline (or inlineOnly) method.
             // It is because the method body contains access call to inlineOnly property in nonpublic multifile part,
@@ -940,9 +941,8 @@ object ArrayOps : TemplateGroupBase() {
         doc {
             """
             Returns a new array which is a copy of the specified range of the original array.
-
-            @param fromIndex the start of the range (inclusive), must be in `0..array.size`
-            @param toIndex the end of the range (exclusive), must be in `fromIndex..array.size`
+            
+            ${rangeDoc(hasDefault = false, action = "copy")}
             """
         }
         returns("SELF")
@@ -1295,8 +1295,15 @@ object ArrayOps : TemplateGroupBase() {
         platforms(Platform.JVM)
         include(ArraysOfObjects)
     } builder {
-        doc { "Sorts a range in the array in-place." }
-        appendStableSortNote()
+        doc {
+            """
+            Sorts a range in the array in-place.
+            
+            $stableSortNote
+            
+            ${rangeDoc(hasDefault = true, action = "sort")}
+            """
+        }
         sample("samples.collections.Arrays.Sorting.sortRangeOfArrayOfComparable")
         returns("Unit")
         body { "java.util.Arrays.sort(this, fromIndex, toIndex)" }
@@ -1309,12 +1316,17 @@ object ArrayOps : TemplateGroupBase() {
         on(Platform.Common) { since("1.4") }
 
         typeParam("T : Comparable<T>")
-        doc { "Sorts a range in the array in-place." }
+        doc {
+            """
+            Sorts a range in the array in-place.
+            ${if (f == ArraysOfObjects) "\n$stableSortNote\n" else ""}
+            ${rangeDoc(hasDefault = true, action = "sort")}
+            """
+        }
         specialFor(ArraysOfObjects) {
-            appendStableSortNote()
             sample("samples.collections.Arrays.Sorting.sortRangeOfArrayOfComparable")
         }
-        specialFor(ArraysOfPrimitives) {
+        specialFor(ArraysOfPrimitives, ArraysOfUnsigned) {
             sample("samples.collections.Arrays.Sorting.sortRangeOfArray")
         }
         returns("Unit")
@@ -1378,8 +1390,15 @@ object ArrayOps : TemplateGroupBase() {
     val f_sortWith_range = fn("sortWith(comparator: Comparator<in T>, fromIndex: Int = 0, toIndex: Int = size)") {
         include(ArraysOfObjects)
     } builder {
-        doc { "Sorts a range in the array in-place with the given [comparator]." }
-        appendStableSortNote()
+        doc {
+            """
+            Sorts a range in the array in-place with the given [comparator].
+            
+            $stableSortNote
+            
+            ${rangeDoc(hasDefault = true, action = "sort")}
+            """
+        }
         returns("Unit")
         on(Platform.JVM) {
             suppress("ACTUAL_FUNCTION_WITH_DEFAULT_ARGUMENTS")
@@ -1417,13 +1436,14 @@ object ArrayOps : TemplateGroupBase() {
             """
             Sorts elements of the ${f.collection} in the specified range in-place.
             The elements are sorted descending according to their natural sort order.
+            ${if (f == ArraysOfObjects) "\n$stableSortNote\n" else ""}
+            ${rangeDoc(hasDefault = false, action = "sort")}
             """
         }
         returns("Unit")
         typeParam("T : Comparable<T>")
 
         specialFor(ArraysOfObjects) {
-            appendStableSortNote()
             body { """sortWith(reverseOrder(), fromIndex, toIndex)""" }
         }
         body(ArraysOfPrimitives, ArraysOfUnsigned) {
@@ -1529,6 +1549,22 @@ object ArrayOps : TemplateGroupBase() {
         }
     }
 
+    fun MemberBuilder.rangeParamDoc(hasDefault: Boolean, action: String): String = """
+        @param fromIndex the start of the range (inclusive) to $action${if (hasDefault) ", 0 by default" else ""}.
+        @param toIndex the end of the range (exclusive) to $action${if (hasDefault) ", ${f.code.size} of this ${f.collection} by default" else ""}.
+        """.trimIndent()
+
+    fun MemberBuilder.rangeThrowsDoc(): String = """
+        @throws IndexOutOfBoundsException if [fromIndex] is less than zero or [toIndex] is greater than the ${f.code.size} of this ${f.collection}.
+        @throws IllegalArgumentException if [fromIndex] is greater than [toIndex].
+        """.trimIndent()
+
+    fun MemberBuilder.rangeDoc(hasDefault: Boolean, action: String): String = """
+        ${rangeParamDoc(hasDefault, action)}
+        
+        ${rangeThrowsDoc()}
+        """.trimIndent()
+
     val f_fill = fn("fill(element: T, fromIndex: Int = 0, toIndex: Int = size)") {
         include(InvariantArraysOfObjects, ArraysOfPrimitives, ArraysOfUnsigned)
     } builder {
@@ -1536,11 +1572,7 @@ object ArrayOps : TemplateGroupBase() {
             """
             Fills this array or its subrange with the specified [element] value.
             
-            @param fromIndex the start of the range (inclusive), 0 by default.
-            @param toIndex the end of the range (exclusive), size of this array by default.
-            
-            @throws IndexOutOfBoundsException if [fromIndex] is less than zero or [toIndex] is greater than the size of this array.
-            @throws IllegalArgumentException if [fromIndex] is greater than [toIndex].
+            ${rangeDoc(hasDefault = true, action = "fill")}
             """
         }
         returns("Unit")
@@ -1593,11 +1625,16 @@ object ArrayOps : TemplateGroupBase() {
             The array is expected to be sorted, otherwise the result is undefined.
 
             If the array contains multiple elements equal to the specified [element], there is no guarantee which one will be found.
+            
+            @param element the to search for.
+            ${rangeParamDoc(hasDefault = true, action = "search in")}
 
             @return the index of the element, if it is contained in the array within the specified range;
             otherwise, the inverted insertion point `(-insertion point - 1)`.
             The insertion point is defined as the index at which the element should be inserted,
             so that the array (or the specified subrange of array) still remains sorted.
+            
+            ${rangeThrowsDoc()}
             """
         }
         returns("Int")
@@ -1666,10 +1703,16 @@ object ArrayOps : TemplateGroupBase() {
 
             If the array contains multiple elements equal to the specified [element], there is no guarantee which one will be found.
 
+            @param element the element to search for.
+            @param comparator the comparator according to which this array is sorted.
+            ${rangeParamDoc(hasDefault = true, action = "search in")}
+
             @return the index of the element, if it is contained in the array within the specified range;
             otherwise, the inverted insertion point `(-insertion point - 1)`.
             The insertion point is defined as the index at which the element should be inserted,
             so that the array (or the specified subrange of array) still remains sorted according to the specified [comparator].
+
+            ${rangeThrowsDoc()}
             """
         }
         returns("Int")

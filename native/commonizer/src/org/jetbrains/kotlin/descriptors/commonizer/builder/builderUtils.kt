@@ -7,8 +7,9 @@ package org.jetbrains.kotlin.descriptors.commonizer.builder
 
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.ir.*
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.ir.CirSimpleTypeKind.Companion.areCompatible
+import org.jetbrains.kotlin.descriptors.commonizer.cir.*
+import org.jetbrains.kotlin.descriptors.commonizer.cir.CirSimpleTypeKind.Companion.areCompatible
+import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.cirSimpleTypeKind
 import org.jetbrains.kotlin.descriptors.commonizer.utils.isUnderStandardKotlinPackages
 import org.jetbrains.kotlin.descriptors.commonizer.utils.resolveClassOrTypeAliasByFqName
 import org.jetbrains.kotlin.descriptors.impl.ValueParameterDescriptorImpl
@@ -120,11 +121,8 @@ internal fun CirSimpleType.buildType(
         }
     }
 
-    // TODO: commonize annotations, KT-34234
-    val typeAnnotations = if (!targetComponents.isCommon) annotations.buildDescriptors(targetComponents) else Annotations.EMPTY
-
     val simpleType = simpleType(
-        annotations = typeAnnotations,
+        annotations = Annotations.EMPTY,
         constructor = classifier.typeConstructor,
         arguments = arguments.map { it.buildArgument(targetComponents, typeParameterResolver) },
         nullable = isMarkedNullable,
@@ -163,7 +161,7 @@ internal fun findClassOrTypeAlias(
 }
 
 private fun checkClassifier(classifier: ClassifierDescriptor, kind: CirSimpleTypeKind, strict: Boolean) {
-    val classifierKind = CirSimpleTypeKind.determineKind(classifier)
+    val classifierKind = classifier.cirSimpleTypeKind
 
     if (strict) {
         check(kind == classifierKind) {

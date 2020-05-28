@@ -6,13 +6,12 @@
 package org.jetbrains.kotlin.backend.common.serialization
 
 import org.jetbrains.kotlin.backend.common.LoggingContext
+import org.jetbrains.kotlin.backend.common.ir.isExpect
 import org.jetbrains.kotlin.backend.common.serialization.encodings.BinarySymbolData
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.impl.EmptyPackageFragmentDescriptor
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.declarations.IrDeclaration
-import org.jetbrains.kotlin.ir.declarations.IrFile
-import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrModuleFragmentImpl
 import org.jetbrains.kotlin.ir.descriptors.*
@@ -491,10 +490,15 @@ abstract class KotlinIrLinker(
         moduleDeserializer.declareIrSymbol(symbol)
 
         deserializeAllReachableTopLevels()
+        if (!symbol.isBound) return null
         return descriptor
     }
 
     protected open fun platformSpecificSymbol(symbol: IrSymbol): Boolean = false
+
+    private fun IrElement.isExpectMember(): Boolean =
+        this is IrSymbolDeclaration<*> &&
+                (this.isExpect || (this.parent as? IrDeclaration)?.isExpect == true)
 
     override fun getDeclaration(symbol: IrSymbol): IrDeclaration? {
 
@@ -511,7 +515,7 @@ abstract class KotlinIrLinker(
         }
 
         // TODO: we do have serializations for those, but let's just create a stub for now.
-        if (!symbol.isBound && (symbol.descriptor.isExpectMember || symbol.descriptor.containingDeclaration?.isExpectMember == true))
+        if (!symbol.isBound && symbol.owner.isExpectMember())
             return null
 
         assert(symbol.isBound) {
@@ -521,22 +525,22 @@ abstract class KotlinIrLinker(
         return symbol.owner as IrDeclaration
     }
 
-    protected open fun createCurrentModuleDeserializer(moduleFragment: IrModuleFragment, dependencies: Collection<IrModuleDeserializer>, extensions: Collection<IrExtensionGenerator>): IrModuleDeserializer =
-        CurrentModuleDeserializer(moduleFragment, dependencies, symbolTable, extensions)
+    protected open fun createCurrentModuleDeserializer(moduleFragment: IrModuleFragment, dependencies: Collection<IrModuleDeserializer>): IrModuleDeserializer =
+        CurrentModuleDeserializer(moduleFragment, dependencies)
 
-    override fun init(moduleFragment: IrModuleFragment?, extensions: Collection<IrExtensionGenerator>) {
+    override fun init(moduleFragment: IrModuleFragment?) {
         if (moduleFragment != null) {
             val currentModuleDependencies = moduleFragment.descriptor.allDependencyModules.map {
                 deserializersForModules[it] ?: error("No deserializer found for $it")
             }
-            val currentModuleDeserializer = createCurrentModuleDeserializer(moduleFragment, currentModuleDependencies, extensions)
+            val currentModuleDeserializer = createCurrentModuleDeserializer(moduleFragment, currentModuleDependencies)
             deserializersForModules[moduleFragment.descriptor] =
                 maybeWrapWithBuiltInAndInit(moduleFragment.descriptor, currentModuleDeserializer)
         }
         deserializersForModules.values.forEach { it.init() }
     }
 
-    fun postProcess() {
+    override fun postProcess() {
         deserializersForModules.values.forEach { it.postProcess() }
         finalizeExpectActualLinker()
     }

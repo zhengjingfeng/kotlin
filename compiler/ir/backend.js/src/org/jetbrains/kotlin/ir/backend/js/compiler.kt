@@ -45,7 +45,8 @@ fun compile(
     exportedDeclarations: Set<FqName> = emptySet(),
     generateFullJs: Boolean = true,
     generateDceJs: Boolean = false,
-    dceDriven: Boolean = false
+    dceDriven: Boolean = false,
+    es6mode: Boolean = false
 ): CompilerResult {
     stageController = object : StageController {}
 
@@ -56,7 +57,7 @@ fun compile(
 
     val mainFunction = JsMainFunctionDetector.getMainFunctionOrNull(moduleFragment)
 
-    val context = JsIrBackendContext(moduleDescriptor, irBuiltIns, symbolTable, moduleFragment, exportedDeclarations, configuration)
+    val context = JsIrBackendContext(moduleDescriptor, irBuiltIns, symbolTable, moduleFragment, exportedDeclarations, configuration, es6mode = es6mode)
 
     // Load declarations referenced during `context` initialization
     val irProviders = listOf(deserializer)
@@ -73,8 +74,6 @@ fun compile(
 
     moduleFragment.files.clear()
     moduleFragment.files += irFiles
-
-    symbolTable.lazyWrapper.stubGenerator = DeclarationStubGenerator(moduleDescriptor, symbolTable, irBuiltIns.languageVersionSettings)
 
     moveBodilessDeclarationsToSeparatePlace(context, moduleFragment)
 
@@ -99,7 +98,8 @@ fun compile(
         val transformer = IrModuleToJsTransformer(context, mainFunction, mainArguments)
         return transformer.generateModule(moduleFragment, fullJs = true, dceJs = false)
     } else {
-        jsPhases.invokeToplevel(phaseConfig, context, moduleFragment)
+        val phases = if (es6mode) jsEs6Phases else jsPhases
+        phases.invokeToplevel(phaseConfig, context, moduleFragment)
         val transformer = IrModuleToJsTransformer(context, mainFunction, mainArguments)
         return transformer.generateModule(moduleFragment, generateFullJs, generateDceJs)
     }

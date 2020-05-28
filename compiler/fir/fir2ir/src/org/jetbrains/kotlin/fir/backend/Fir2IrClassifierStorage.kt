@@ -142,9 +142,7 @@ class Fir2IrClassifierStorage(
             return createIrAnonymousObject(klass, irParent = parent)
         }
         val regularClass = klass as FirRegularClass
-        val origin =
-            if (firProvider.getFirClassifierContainerFileIfAny(klass.symbol) != null) IrDeclarationOrigin.DEFINED
-            else IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB
+        val origin = regularClass.irOrigin(firProvider)
         val irClass = registerIrClass(regularClass, parent, origin)
         processClassHeader(regularClass, irClass)
         return irClass
@@ -169,7 +167,7 @@ class Fir2IrClassifierStorage(
             regularClass.modality ?: Modality.FINAL
         }
         val irClass = regularClass.convertWithOffsets { startOffset, endOffset ->
-            symbolTable.declareClass(startOffset, endOffset, origin, descriptor, modality, visibility) { symbol ->
+            symbolTable.declareClass(descriptor) { symbol ->
                 IrClassImpl(
                     startOffset,
                     endOffset,
@@ -213,14 +211,12 @@ class Fir2IrClassifierStorage(
         val origin = IrDeclarationOrigin.DEFINED
         val modality = Modality.FINAL
         val result = anonymousObject.convertWithOffsets { startOffset, endOffset ->
-            symbolTable.declareClass(startOffset, endOffset, origin, descriptor, modality, visibility) { symbol ->
+            symbolTable.declareClass(descriptor) { symbol ->
                 IrClassImpl(
                     startOffset, endOffset, origin, symbol, name,
                     // NB: for unknown reason, IR uses 'CLASS' kind for simple anonymous objects
                     anonymousObject.classKind.takeIf { it == ClassKind.ENUM_ENTRY } ?: ClassKind.CLASS,
-                    visibility, modality,
-                    isCompanion = false, isInner = false, isData = false,
-                    isExternal = false, isInline = false, isExpect = false, isFun = false
+                    visibility, modality
                 ).apply {
                     metadata = FirMetadataSource.Class(anonymousObject, descriptor)
                     descriptor.bind(this)
@@ -354,31 +350,28 @@ class Fir2IrClassifierStorage(
 
     fun getIrClassSymbol(firClassSymbol: FirClassSymbol<*>): IrClassSymbol {
         val firClass = firClassSymbol.fir
-        getCachedIrClass(firClass)?.let { return symbolTable.referenceClass(it.descriptor) }
-        // TODO: remove all this code and change to unbound symbol creation
-        val irClass = createIrClass(firClass)
+        getCachedIrClass(firClass)?.let { return it.symbol }
         if (firClass is FirAnonymousObject || firClass is FirRegularClass && firClass.visibility == Visibilities.LOCAL) {
-            return symbolTable.referenceClass(irClass.descriptor)
+            return createIrClass(firClass).symbol
         }
+        // TODO: remove all this code and change to unbound symbol creation
         val classId = firClassSymbol.classId
         val parentId = classId.outerClassId
         val irParent = declarationStorage.findIrParent(classId.packageFqName, parentId, firClassSymbol)
-        if (irParent != null) {
-            irClass.parent = irParent
-        }
+        val irClass = createIrClass(firClass, irParent)
+
         if (irParent is IrExternalPackageFragment) {
             declarationStorage.addDeclarationsToExternalClass(firClass as FirRegularClass, irClass)
         }
 
-        return symbolTable.referenceClass(irClass.descriptor)
+        return irClass.symbol
     }
 
     fun getIrTypeParameterSymbol(
         firTypeParameterSymbol: FirTypeParameterSymbol,
         typeContext: ConversionTypeContext
     ): IrTypeParameterSymbol {
-        val irTypeParameter = getCachedIrTypeParameter(firTypeParameterSymbol.fir, typeContext = typeContext)
+        return getCachedIrTypeParameter(firTypeParameterSymbol.fir, typeContext = typeContext)?.symbol
             ?: throw AssertionError("Cannot find cached type parameter by FIR symbol: ${firTypeParameterSymbol.name}")
-        return symbolTable.referenceTypeParameter(irTypeParameter.descriptor)
     }
 }

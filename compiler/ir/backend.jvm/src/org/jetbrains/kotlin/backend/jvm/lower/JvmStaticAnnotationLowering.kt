@@ -17,9 +17,11 @@ import org.jetbrains.kotlin.backend.common.phaser.makeIrFilePhase
 import org.jetbrains.kotlin.backend.common.runOnFilePostfix
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
+import org.jetbrains.kotlin.backend.jvm.ir.copyCorrespondingPropertyFrom
 import org.jetbrains.kotlin.backend.jvm.ir.isInCurrentModule
 import org.jetbrains.kotlin.backend.jvm.ir.replaceThisByStaticReference
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.ir.builders.declarations.addFunction
 import org.jetbrains.kotlin.ir.builders.declarations.buildFunWithDescriptorForInlining
 import org.jetbrains.kotlin.ir.builders.irCall
@@ -98,7 +100,9 @@ private class CompanionObjectJvmStaticLowering(val context: JvmBackendContext) :
             // so we do not have a property to link it up to. Therefore, we compute the right name now.
             name = Name.identifier(context.methodSignatureMapper.mapFunctionName(target))
             modality = if (isInterface) Modality.OPEN else target.modality
-            visibility = target.visibility
+            // Since we already mangle the name above we need to reset internal visibilities to public in order
+            // to avoid mangling the same name twice.
+            visibility = if (target.visibility == Visibilities.INTERNAL) Visibilities.PUBLIC else target.visibility
             isSuspend = target.isSuspend
         }.apply {
             copyTypeParametersFrom(target)
@@ -137,14 +141,15 @@ private class SingletonObjectJvmStaticLowering(
             // dispatch receiver parameter is already null for synthetic property annotation methods
             jvmStaticFunction.dispatchReceiverParameter?.let { oldDispatchReceiverParameter ->
                 jvmStaticFunction.dispatchReceiverParameter = null
-                modifyBody(jvmStaticFunction, irClass, oldDispatchReceiverParameter)
+                jvmStaticFunction.body = jvmStaticFunction.body?.replaceThisByStaticReference(
+                    context.declarationFactory,
+                    irClass,
+                    oldDispatchReceiverParameter
+                )
             }
         }
     }
 
-    fun modifyBody(irFunction: IrFunction, irClass: IrClass, oldDispatchReceiverParameter: IrValueParameter) {
-        irFunction.body = irFunction.body?.replaceThisByStaticReference(context.declarationFactory, irClass, oldDispatchReceiverParameter)
-    }
 }
 
 private fun IrFunction.isJvmStaticInSingleton(): Boolean {
@@ -193,7 +198,7 @@ private class MakeCallsStatic(
             returnType = this@copyRemovingDispatchReceiver.returnType
         }.also {
             it.parent = parent
-            it.correspondingPropertySymbol = correspondingPropertySymbol
+            it.copyCorrespondingPropertyFrom(this)
             it.annotations += annotations
             it.copyParameterDeclarationsFrom(this)
             it.dispatchReceiverParameter = null

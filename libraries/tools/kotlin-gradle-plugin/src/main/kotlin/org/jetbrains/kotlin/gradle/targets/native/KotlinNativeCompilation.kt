@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.sources.getSourceSetHierarchy
 import org.jetbrains.kotlin.gradle.plugin.sources.getVisibleSourceSetsFromAssociateCompilations
+import org.jetbrains.kotlin.gradle.targets.metadata.getMetadataCompilationForSourceSet
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 import org.jetbrains.kotlin.gradle.utils.SingleWarningPerBuild
 import org.jetbrains.kotlin.gradle.utils.lowerCamelCaseName
@@ -102,7 +103,8 @@ class KotlinSharedNativeCompilation(override val target: KotlinMetadataTarget, v
         target,
         // TODO: this will end up as '-target' argument passed to K2Native, which is wrong.
         // Rewrite this when we'll compile native-shared source-sets against commonized platform libs
-        konanTargets.first(),
+        // We find any konan target that is enabled on the current host in order to pass the checks that avoid compiling the code otherwise.
+        konanTargets.find { it.enabledOnCurrentHost } ?: konanTargets.first(),
         name
     ),
     KotlinMetadataCompilation<KotlinCommonOptions> {
@@ -116,6 +118,6 @@ class KotlinSharedNativeCompilation(override val target: KotlinMetadataTarget, v
                 addAll(defaultSourceSet.getSourceSetHierarchy())
                 remove(defaultSourceSet)
             }
-            project.files(friendSourceSets.mapNotNull { target.compilations.findByName(it.name)?.output?.classesDirs })
+            project.files(friendSourceSets.mapNotNull { project.getMetadataCompilationForSourceSet(it)?.output?.classesDirs })
         })
 }

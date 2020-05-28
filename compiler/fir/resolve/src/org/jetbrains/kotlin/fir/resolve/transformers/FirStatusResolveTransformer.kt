@@ -14,21 +14,14 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
 import org.jetbrains.kotlin.fir.expressions.FirBlock
 import org.jetbrains.kotlin.fir.expressions.FirStatement
+import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.visitors.CompositeTransformResult
-import org.jetbrains.kotlin.fir.visitors.FirTransformer
 import org.jetbrains.kotlin.fir.visitors.compose
 import org.jetbrains.kotlin.fir.visitors.transformSingle
 
-@AdapterForResolvePhase
-class FirStatusResolveTransformerAdapter : FirTransformer<Nothing?>() {
-    override fun <E : FirElement> transformElement(element: E, data: Nothing?): CompositeTransformResult<E> {
-        error("Should not be called for ${element::class}, only for files")
-    }
-
-    override fun transformFile(file: FirFile, data: Nothing?): CompositeTransformResult<FirDeclaration> {
-        val transformer = FirStatusResolveTransformer(file.session)
-        return file.transform(transformer, null)
-    }
+@OptIn(AdapterForResolveProcessor::class)
+class FirStatusResolveProcessor(session: FirSession, scopeSession: ScopeSession) : FirTransformerBasedResolveProcessor(session, scopeSession) {
+    override val transformer = FirStatusResolveTransformer(session)
 }
 
 fun <F : FirClass<F>> F.runStatusResolveForLocalClass(session: FirSession): F {
@@ -37,7 +30,7 @@ fun <F : FirClass<F>> F.runStatusResolveForLocalClass(session: FirSession): F {
     return this.transform<F, Nothing?>(transformer, null).single
 }
 
-private class FirStatusResolveTransformer(
+class FirStatusResolveTransformer(
     override val session: FirSession
 ) : FirAbstractTreeTransformer<FirDeclarationStatus?>(phase = FirResolvePhase.STATUS) {
     private val classes = mutableListOf<FirClass<*>>()
@@ -95,6 +88,7 @@ private class FirStatusResolveTransformer(
 
     override fun transformRegularClass(regularClass: FirRegularClass, data: FirDeclarationStatus?): CompositeTransformResult<FirStatement> {
         regularClass.transformStatus(this, regularClass.resolveStatus(regularClass.status, containingClass, isLocal = false))
+        @Suppress("UNCHECKED_CAST")
         return storeClass(regularClass) {
             regularClass.typeParameters.forEach { it.transformSingle(this, data) }
             transformDeclaration(regularClass, data)
@@ -105,6 +99,7 @@ private class FirStatusResolveTransformer(
         anonymousObject: FirAnonymousObject,
         data: FirDeclarationStatus?
     ): CompositeTransformResult<FirStatement> {
+        @Suppress("UNCHECKED_CAST")
         return storeClass(anonymousObject) {
             transformDeclaration(anonymousObject, data)
         } as CompositeTransformResult<FirStatement>
@@ -115,6 +110,7 @@ private class FirStatusResolveTransformer(
         data: FirDeclarationStatus?
     ): CompositeTransformResult<FirStatement> {
         propertyAccessor.transformStatus(this, propertyAccessor.resolveStatus(propertyAccessor.status, containingClass, isLocal = false))
+        @Suppress("UNCHECKED_CAST")
         return transformDeclaration(propertyAccessor, data) as CompositeTransformResult<FirStatement>
     }
 
@@ -150,6 +146,7 @@ private class FirStatusResolveTransformer(
         valueParameter: FirValueParameter,
         data: FirDeclarationStatus?
     ): CompositeTransformResult<FirStatement> {
+        @Suppress("UNCHECKED_CAST")
         return transformDeclaration(valueParameter, data) as CompositeTransformResult<FirStatement>
     }
 
@@ -206,9 +203,11 @@ fun FirDeclaration.resolveStatus(
 }
 
 private fun FirDeclaration.resolveVisibility(containingClass: FirClass<*>?): Visibility {
+    // See DescriptorUtils#getDefaultConstructorVisibility in core.descriptors
     if (this is FirConstructor) {
         if (containingClass != null &&
-            (containingClass.classKind == ClassKind.ENUM_CLASS || containingClass.modality == Modality.SEALED)
+            (containingClass.classKind == ClassKind.ENUM_CLASS || containingClass.classKind == ClassKind.ENUM_ENTRY ||
+                    containingClass.modality == Modality.SEALED)
         ) {
             return Visibilities.PRIVATE
         }

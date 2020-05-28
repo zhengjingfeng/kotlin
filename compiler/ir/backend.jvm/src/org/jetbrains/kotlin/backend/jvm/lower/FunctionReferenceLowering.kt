@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.backend.common.phaser.makeIrFilePhase
 import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.backend.jvm.ir.*
+import org.jetbrains.kotlin.backend.jvm.lower.inlineclasses.InlineClassAbi
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -337,7 +338,7 @@ internal class FunctionReferenceLowering(private val context: JvmBackendContext)
         }
 
         private fun getFunctionReferenceFlags(callableReferenceTarget: IrFunction): Int {
-            val isTopLevelBit = if (callableReferenceTarget.parent.let { it is IrClass && it.isFileClass }) 1 else 0
+            val isTopLevelBit = getCallableReferenceTopLevelFlag(callableReferenceTarget)
             val adaptedCallableReferenceFlags = getAdaptedCallableReferenceFlags()
             return isTopLevelBit + (adaptedCallableReferenceFlags shl 1)
         }
@@ -369,7 +370,12 @@ internal class FunctionReferenceLowering(private val context: JvmBackendContext)
         private fun createInvokeMethod(receiverVar: IrValueDeclaration?): IrSimpleFunction =
             functionReferenceClass.addFunction {
                 setSourceRange(if (isLambda) callee else irFunctionReference)
-                name = superMethod.owner.name
+                name = if (callee.returnType.erasedUpperBound.isInline) {
+                    // For functions with inline class return type we need to mangle the invoke method.
+                    // Otherwise, bridge lowering may fail to generate bridges for inline class types erasing to Any.
+                    val suffix = InlineClassAbi.returnHashSuffix(callee)
+                    Name.identifier("${superMethod.owner.name.asString()}-${suffix}")
+                } else superMethod.owner.name
                 returnType = callee.returnType
                 isSuspend = callee.isSuspend
             }.apply {
@@ -518,14 +524,21 @@ internal class FunctionReferenceLowering(private val context: JvmBackendContext)
         }
 
         internal fun IrBuilderWithScope.calculateOwnerKClass(irContainer: IrDeclarationParent, context: JvmBackendContext): IrExpression =
-            kClassReference(
-                if (irContainer is IrClass) irContainer.defaultType
-                else {
-                    // For built-in members (i.e. top level `toString`) we generate reference to an internal class for an owner.
-                    // This allows kotlin-reflect to understand that this is a built-in intrinsic which has no real declaration,
-                    // and construct a special KCallable object.
-                    context.ir.symbols.intrinsicsKotlinClass.defaultType
-                }
-            )
+            kClassReference(getOwnerKClassType(irContainer, context))
+
+        internal fun getOwnerKClassType(irContainer: IrDeclarationParent, context: JvmBackendContext): IrType =
+            if (irContainer is IrClass) irContainer.defaultType
+            else {
+                // For built-in members (i.e. top level `toString`) we generate reference to an internal class for an owner.
+                // This allows kotlin-reflect to understand that this is a built-in intrinsic which has no real declaration,
+                // and construct a special KCallable object.
+                context.ir.symbols.intrinsicsKotlinClass.defaultType
+            }
+
+        internal fun getCallableReferenceTopLevelFlag(declaration: IrDeclaration): Int =
+            if (isCallableReferenceTopLevel(declaration)) 1 else 0
+
+        internal fun isCallableReferenceTopLevel(declaration: IrDeclaration): Boolean =
+            declaration.parent.let { it is IrClass && it.isFileClass }
     }
 }
