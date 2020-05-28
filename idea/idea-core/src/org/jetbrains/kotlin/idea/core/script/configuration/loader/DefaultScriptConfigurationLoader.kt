@@ -39,8 +39,6 @@ open class DefaultScriptConfigurationLoader(val project: Project) : ScriptConfig
     ): Boolean {
         val virtualFile = ktFile.originalFile.virtualFile
 
-        if (ScriptConfigurationManager.isManualConfigurationLoading(virtualFile)) return false
-
         val result = getConfigurationThroughScriptingApi(ktFile, virtualFile, scriptDefinition)
 
         context.suggestNewConfiguration(virtualFile, result)
