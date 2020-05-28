@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.js.test
 
+import com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlin.js.engine.ScriptEngine
 import org.jetbrains.kotlin.js.engine.ScriptEngineNashorn
 import org.jetbrains.kotlin.js.engine.ScriptEngineV8
@@ -58,7 +59,7 @@ abstract class AbstractJsTestChecker {
         withModuleSystem: Boolean
     ) {
         val actualResult = run(files, testModuleName, testPackageName, testFunctionName, withModuleSystem)
-        Assert.assertEquals(expectedResult, actualResult)
+        Assert.assertEquals(expectedResult, actualResult.toString().normalize())
     }
 
     private fun run(
@@ -79,9 +80,11 @@ abstract class AbstractJsTestChecker {
     fun checkStdout(files: List<String>, expectedResult: String) {
         run(files) {
             val actualResult = eval(GET_KOTLIN_OUTPUT)
-            Assert.assertEquals(expectedResult, actualResult)
+            Assert.assertEquals(expectedResult, actualResult.normalize())
         }
     }
+
+    private fun String.normalize() = StringUtil.convertLineSeparators(this)
 
     protected abstract fun run(files: List<String>, f: ScriptEngine.() -> Any?): Any?
 }

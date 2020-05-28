@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.js.engine
 
+import com.intellij.openapi.util.text.StringUtil
 import java.io.File
 
 private val isWindows = "win" in System.getProperty("os.name").toLowerCase()
@@ -25,7 +26,7 @@ class SimpleProcessBasedScriptEngine(
         val stderr = vm.errorStream
 
         val writer = stdin.writer()
-        writer.write(script.replace("\r", "").replace("\n", "\\n") + "\n")
+        writer.write(StringUtil.convertLineSeparators(script) + "\n")
         writer.flush()
 
         val out = StringBuilder()
