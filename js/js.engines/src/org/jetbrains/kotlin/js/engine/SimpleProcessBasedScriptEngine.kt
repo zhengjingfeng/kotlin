@@ -25,7 +25,7 @@ class SimpleProcessBasedScriptEngine(
         val stderr = vm.errorStream
 
         val writer = stdin.writer()
-        writer.write(script.replace("\n", "\\n") + "\n")
+        writer.write(script.replace("\r", "").replace("\n", "\\n") + "\n")
         writer.flush()
 
         val out = StringBuilder()
@@ -55,7 +55,7 @@ class SimpleProcessBasedScriptEngine(
             error("ERROR:\n$err\nOUTPUT:\n$out")
         }
 
-        return out.removeSuffix(END).removeSuffix("\n").toString()
+        return out.removeSuffix(END).removeSuffix(LINE_SEPARATOR).toString()
     }
 
     override fun loadFile(path: String) {
