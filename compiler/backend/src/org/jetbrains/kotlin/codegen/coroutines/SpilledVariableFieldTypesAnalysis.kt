@@ -24,19 +24,21 @@ import org.jetbrains.org.objectweb.asm.tree.analysis.Value
 // In this case, update the type of the value.
 
 // StrictBasicValue with mutable type
-internal open class ReifiedIntTypeValue(open var type: Type?, val insn: AbstractInsnNode?) : Value {
-    override fun getSize(): Int = if (type == Type.LONG_TYPE || type == Type.DOUBLE_TYPE) 2 else 1
+internal open class SpilledVariableFieldTypeValue(open var type: Type?, val insn: AbstractInsnNode?) : Value {
+    override fun getSize(): Int = type?.size ?: 1
 
-    override fun equals(other: Any?): Boolean = other is ReifiedIntTypeValue && type == other.type && insn == other.insn
+    override fun equals(other: Any?): Boolean = other is SpilledVariableFieldTypeValue && type == other.type && insn == other.insn
 
     override fun hashCode(): Int = (type?.hashCode() ?: 0) xor insn.hashCode()
 
     override fun toString() = if (type == null) "." else "$type"
 }
 
-private class MergedIntTypeValue(val values: Set<ReifiedIntTypeValue>) : ReifiedIntTypeValue(null, null) {
+private class MergedSpilledVariableFieldTypeValue(
+    val values: Set<SpilledVariableFieldTypeValue>
+) : SpilledVariableFieldTypeValue(null, null) {
     init {
-        require(values.none { it is MergedIntTypeValue })
+        require(values.none { it is MergedSpilledVariableFieldTypeValue })
     }
 
     override var type: Type?
@@ -47,33 +49,40 @@ private class MergedIntTypeValue(val values: Set<ReifiedIntTypeValue>) : Reified
             }
         }
 
-    override fun equals(other: Any?): Boolean = other is MergedIntTypeValue && other.values == values
+    override fun equals(other: Any?): Boolean = other is MergedSpilledVariableFieldTypeValue && other.values == values
+
+    override fun hashCode(): Int = values.hashCode()
 
     override fun toString(): String = "M$values"
 }
 
-private operator fun ReifiedIntTypeValue?.plus(other: ReifiedIntTypeValue?): ReifiedIntTypeValue? = when {
+private operator fun SpilledVariableFieldTypeValue?.plus(other: SpilledVariableFieldTypeValue?): SpilledVariableFieldTypeValue? = when {
     this == null -> other
     other == null -> this
     this == other -> this
-    this is MergedIntTypeValue -> {
-        if (other is MergedIntTypeValue) MergedIntTypeValue(values + other.values)
-        else MergedIntTypeValue(values + other)
+    this is MergedSpilledVariableFieldTypeValue -> {
+        if (other is MergedSpilledVariableFieldTypeValue) MergedSpilledVariableFieldTypeValue(values + other.values)
+        else MergedSpilledVariableFieldTypeValue(values + other)
     }
-    other is MergedIntTypeValue -> MergedIntTypeValue(other.values + this)
-    else -> MergedIntTypeValue(setOf(this, other))
+    other is MergedSpilledVariableFieldTypeValue -> MergedSpilledVariableFieldTypeValue(other.values + this)
+    else -> MergedSpilledVariableFieldTypeValue(setOf(this, other))
 }
 
 internal val NULL_TYPE = Type.getObjectType("null")
 
 // Same as BasicInterpreter, but updates types based on usages
-private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : Interpreter<ReifiedIntTypeValue>(API_VERSION) {
-    override fun newValue(type: Type?): ReifiedIntTypeValue? =
-        if (type == Type.VOID_TYPE) null else ReifiedIntTypeValue(type, null)
+private class SpilledVariableFieldTypesInterpreter(
+    private val methodNode: MethodNode
+) : Interpreter<SpilledVariableFieldTypeValue>(API_VERSION) {
+    override fun newValue(type: Type?): SpilledVariableFieldTypeValue? =
+        if (type == Type.VOID_TYPE) null else SpilledVariableFieldTypeValue(type, null)
 
     // INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE,
     // MULTIANEWARRAY and INVOKEDYNAMIC
-    override fun naryOperation(insn: AbstractInsnNode, values: MutableList<out ReifiedIntTypeValue?>): ReifiedIntTypeValue? {
+    override fun naryOperation(
+        insn: AbstractInsnNode,
+        values: MutableList<out SpilledVariableFieldTypeValue?>
+    ): SpilledVariableFieldTypeValue? {
         fun updateTypes(argTypes: Array<Type>, withReceiver: Boolean) {
             val offset = if (withReceiver) 1 else 0
             for ((index, argType) in argTypes.withIndex()) {
@@ -89,7 +98,7 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
             }
         }
 
-        return ReifiedIntTypeValue(
+        return SpilledVariableFieldTypeValue(
             when (insn.opcode) {
                 MULTIANEWARRAY -> {
                     Type.getType((insn as MultiANewArrayInsnNode).desc)
@@ -123,10 +132,10 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
     // IASTORE, LASTORE, FASTORE, DASTORE, AASTORE, BASTORE, CASTORE, SASTORE
     override fun ternaryOperation(
         insn: AbstractInsnNode,
-        arrayref: ReifiedIntTypeValue?,
-        index: ReifiedIntTypeValue?,
-        value: ReifiedIntTypeValue?
-    ): ReifiedIntTypeValue? {
+        arrayref: SpilledVariableFieldTypeValue?,
+        index: SpilledVariableFieldTypeValue?,
+        value: SpilledVariableFieldTypeValue?
+    ): SpilledVariableFieldTypeValue? {
         when (insn.opcode) {
             IASTORE, LASTORE, FASTORE, DASTORE, AASTORE -> {
                 // nothing to do
@@ -145,16 +154,16 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
         return null
     }
 
-    override fun merge(v: ReifiedIntTypeValue?, w: ReifiedIntTypeValue?): ReifiedIntTypeValue? = when {
+    override fun merge(v: SpilledVariableFieldTypeValue?, w: SpilledVariableFieldTypeValue?): SpilledVariableFieldTypeValue? = when {
         v?.type?.isIntType() == true && w?.type?.isIntType() == true -> v + w
         v != null && v.type == null -> w
         w != null && w.type == null -> v
         v?.type == w?.type -> v
-        else -> ReifiedIntTypeValue(null, v?.insn ?: w?.insn)
+        else -> SpilledVariableFieldTypeValue(null, v?.insn ?: w?.insn)
     }
 
     // IRETURN, LRETURN, FRETURN, DRETURN, ARETURN
-    override fun returnOperation(insn: AbstractInsnNode, value: ReifiedIntTypeValue?, expected: ReifiedIntTypeValue?) {
+    override fun returnOperation(insn: AbstractInsnNode, value: SpilledVariableFieldTypeValue?, expected: SpilledVariableFieldTypeValue?) {
         if (insn.opcode == IRETURN) {
             value?.type = expected?.type
         }
@@ -165,41 +174,42 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
     // TABLESWITCH, LOOKUPSWITCH, IRETURN, LRETURN, FRETURN, DRETURN, ARETURN,
     // PUTSTATIC, GETFIELD, NEWARRAY, ANEWARRAY, ARRAYLENGTH, ATHROW, CHECKCAST,
     // INSTANCEOF, MONITORENTER, MONITOREXIT, IFNULL, IFNONNULL
-    override fun unaryOperation(insn: AbstractInsnNode, value: ReifiedIntTypeValue?): ReifiedIntTypeValue? = when (insn.opcode) {
-        INEG, LNEG, FNEG, DNEG, IINC -> ReifiedIntTypeValue(value?.type, insn)
-        I2L, F2L, D2L -> ReifiedIntTypeValue(Type.LONG_TYPE, insn)
-        I2F, L2F, D2F -> ReifiedIntTypeValue(Type.FLOAT_TYPE, insn)
-        L2D, I2D, F2D -> ReifiedIntTypeValue(Type.DOUBLE_TYPE, insn)
-        L2I, F2I, D2I, ARRAYLENGTH -> ReifiedIntTypeValue(Type.INT_TYPE, insn)
-        I2B -> ReifiedIntTypeValue(Type.BYTE_TYPE, insn)
-        I2C -> ReifiedIntTypeValue(Type.CHAR_TYPE, insn)
-        I2S -> ReifiedIntTypeValue(Type.SHORT_TYPE, insn)
-        IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, TABLESWITCH, LOOKUPSWITCH, IRETURN, LRETURN, FRETURN, DRETURN, ARETURN,
-        ATHROW, MONITORENTER, MONITOREXIT, IFNULL, IFNONNULL -> null
-        PUTSTATIC -> {
-            val expectedType = Type.getType((insn as FieldInsnNode).desc)
-            if (expectedType.isIntType()) {
-                value?.type = expectedType
+    override fun unaryOperation(insn: AbstractInsnNode, value: SpilledVariableFieldTypeValue?): SpilledVariableFieldTypeValue? =
+        when (insn.opcode) {
+            INEG, LNEG, FNEG, DNEG, IINC -> SpilledVariableFieldTypeValue(value?.type, insn)
+            I2L, F2L, D2L -> SpilledVariableFieldTypeValue(Type.LONG_TYPE, insn)
+            I2F, L2F, D2F -> SpilledVariableFieldTypeValue(Type.FLOAT_TYPE, insn)
+            L2D, I2D, F2D -> SpilledVariableFieldTypeValue(Type.DOUBLE_TYPE, insn)
+            L2I, F2I, D2I, ARRAYLENGTH -> SpilledVariableFieldTypeValue(Type.INT_TYPE, insn)
+            I2B -> SpilledVariableFieldTypeValue(Type.BYTE_TYPE, insn)
+            I2C -> SpilledVariableFieldTypeValue(Type.CHAR_TYPE, insn)
+            I2S -> SpilledVariableFieldTypeValue(Type.SHORT_TYPE, insn)
+            IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, TABLESWITCH, LOOKUPSWITCH, IRETURN, LRETURN, FRETURN, DRETURN, ARETURN,
+            ATHROW, MONITORENTER, MONITOREXIT, IFNULL, IFNONNULL -> null
+            PUTSTATIC -> {
+                val expectedType = Type.getType((insn as FieldInsnNode).desc)
+                if (expectedType.isIntType()) {
+                    value?.type = expectedType
+                }
+                null
             }
-            null
-        }
-        GETFIELD -> ReifiedIntTypeValue(Type.getType((insn as FieldInsnNode).desc), insn)
-        NEWARRAY -> when ((insn as IntInsnNode).operand) {
-            T_BOOLEAN -> ReifiedIntTypeValue(Type.getType("[Z"), insn)
-            T_CHAR -> ReifiedIntTypeValue(Type.getType("[C"), insn)
-            T_BYTE -> ReifiedIntTypeValue(Type.getType("[B"), insn)
-            T_SHORT -> ReifiedIntTypeValue(Type.getType("[S"), insn)
-            T_INT -> ReifiedIntTypeValue(Type.getType("[I"), insn)
-            T_FLOAT -> ReifiedIntTypeValue(Type.getType("[F"), insn)
-            T_DOUBLE -> ReifiedIntTypeValue(Type.getType("[D"), insn)
-            T_LONG -> ReifiedIntTypeValue(Type.getType("[J"), insn)
+            GETFIELD -> SpilledVariableFieldTypeValue(Type.getType((insn as FieldInsnNode).desc), insn)
+            NEWARRAY -> when ((insn as IntInsnNode).operand) {
+                T_BOOLEAN -> SpilledVariableFieldTypeValue(Type.getType("[Z"), insn)
+                T_CHAR -> SpilledVariableFieldTypeValue(Type.getType("[C"), insn)
+                T_BYTE -> SpilledVariableFieldTypeValue(Type.getType("[B"), insn)
+                T_SHORT -> SpilledVariableFieldTypeValue(Type.getType("[S"), insn)
+                T_INT -> SpilledVariableFieldTypeValue(Type.getType("[I"), insn)
+                T_FLOAT -> SpilledVariableFieldTypeValue(Type.getType("[F"), insn)
+                T_DOUBLE -> SpilledVariableFieldTypeValue(Type.getType("[D"), insn)
+                T_LONG -> SpilledVariableFieldTypeValue(Type.getType("[J"), insn)
+                else -> unreachable(insn)
+            }
+            ANEWARRAY -> SpilledVariableFieldTypeValue(Type.getType("[${Type.getObjectType((insn as TypeInsnNode).desc)}"), insn)
+            CHECKCAST -> SpilledVariableFieldTypeValue(Type.getObjectType((insn as TypeInsnNode).desc), insn)
+            INSTANCEOF -> SpilledVariableFieldTypeValue(Type.BOOLEAN_TYPE, insn)
             else -> unreachable(insn)
         }
-        ANEWARRAY -> ReifiedIntTypeValue(Type.getType("[${Type.getObjectType((insn as TypeInsnNode).desc)}"), insn)
-        CHECKCAST -> ReifiedIntTypeValue(Type.getObjectType((insn as TypeInsnNode).desc), insn)
-        INSTANCEOF -> ReifiedIntTypeValue(Type.BOOLEAN_TYPE, insn)
-        else -> unreachable(insn)
-    }
 
     // IALOAD, LALOAD, FALOAD, DALOAD, AALOAD, BALOAD, CALOAD, SALOAD, IADD,
     // LADD, FADD, DADD, ISUB, LSUB, FSUB, DSUB, IMUL, LMUL, FMUL, DMUL, IDIV,
@@ -207,17 +217,21 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
     // LUSHR, IAND, LAND, IOR, LOR, IXOR, LXOR, LCMP, FCMPL, FCMPG, DCMPL,
     // DCMPG, IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE,
     // IF_ACMPEQ, IF_ACMPNE, PUTFIELD
-    override fun binaryOperation(insn: AbstractInsnNode, v: ReifiedIntTypeValue?, w: ReifiedIntTypeValue?): ReifiedIntTypeValue? =
+    override fun binaryOperation(
+        insn: AbstractInsnNode,
+        v: SpilledVariableFieldTypeValue?,
+        w: SpilledVariableFieldTypeValue?
+    ): SpilledVariableFieldTypeValue? =
         when (insn.opcode) {
             IALOAD, IADD, ISUB, IMUL, IDIV, IREM, ISHL, ISHR, IUSHR, IAND, IOR, IXOR, LCMP, FCMPL, FCMPG, DCMPL,
-            DCMPG -> ReifiedIntTypeValue(Type.INT_TYPE, insn)
-            LALOAD, LADD, LSUB, LMUL, LDIV, LREM, LSHL, LSHR, LUSHR, LAND, LOR, LXOR -> ReifiedIntTypeValue(Type.LONG_TYPE, insn)
-            FALOAD, FADD, FSUB, FMUL, FDIV, FREM -> ReifiedIntTypeValue(Type.FLOAT_TYPE, insn)
-            DALOAD, DADD, DSUB, DMUL, DDIV, DREM -> ReifiedIntTypeValue(Type.DOUBLE_TYPE, insn)
-            AALOAD -> ReifiedIntTypeValue(AsmTypes.OBJECT_TYPE, insn)
-            BALOAD -> ReifiedIntTypeValue(if (v?.type?.descriptor == "[Z") Type.BOOLEAN_TYPE else Type.BYTE_TYPE, insn)
-            CALOAD -> ReifiedIntTypeValue(Type.CHAR_TYPE, insn)
-            SALOAD -> ReifiedIntTypeValue(Type.SHORT_TYPE, insn)
+            DCMPG -> SpilledVariableFieldTypeValue(Type.INT_TYPE, insn)
+            LALOAD, LADD, LSUB, LMUL, LDIV, LREM, LSHL, LSHR, LUSHR, LAND, LOR, LXOR -> SpilledVariableFieldTypeValue(Type.LONG_TYPE, insn)
+            FALOAD, FADD, FSUB, FMUL, FDIV, FREM -> SpilledVariableFieldTypeValue(Type.FLOAT_TYPE, insn)
+            DALOAD, DADD, DSUB, DMUL, DDIV, DREM -> SpilledVariableFieldTypeValue(Type.DOUBLE_TYPE, insn)
+            AALOAD -> SpilledVariableFieldTypeValue(AsmTypes.OBJECT_TYPE, insn)
+            BALOAD -> SpilledVariableFieldTypeValue(if (v?.type?.descriptor == "[Z") Type.BOOLEAN_TYPE else Type.BYTE_TYPE, insn)
+            CALOAD -> SpilledVariableFieldTypeValue(Type.CHAR_TYPE, insn)
+            SALOAD -> SpilledVariableFieldTypeValue(Type.SHORT_TYPE, insn)
             IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE -> null
             PUTFIELD -> {
                 val expectedType = Type.getType((insn as FieldInsnNode).desc)
@@ -231,7 +245,7 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
 
     // ILOAD, LLOAD, FLOAD, DLOAD, ALOAD, ISTORE, LSTORE, FSTORE, DSTORE,
     // ASTORE, DUP, DUP_X1, DUP_X2, DUP2, DUP2_X1, DUP2_X2, SWAP
-    override fun copyOperation(insn: AbstractInsnNode, value: ReifiedIntTypeValue?): ReifiedIntTypeValue? =
+    override fun copyOperation(insn: AbstractInsnNode, value: SpilledVariableFieldTypeValue?): SpilledVariableFieldTypeValue? =
         when (insn.opcode) {
             // If same ICONST is stored into several slots, thay can have different types
             // For example,
@@ -239,7 +253,7 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
             //  val i: Int = b.toInt()
             // In this case, `b` and `i` have the same source, but different types.
             // The example also shows, that the types should be `I`.
-            ISTORE -> ReifiedIntTypeValue(Type.INT_TYPE, insn)
+            ISTORE -> SpilledVariableFieldTypeValue(Type.INT_TYPE, insn)
             // Sometimes we cannot get the type from the usage only
             // For example,
             //  val c = '1'
@@ -261,34 +275,32 @@ private class ReifiedIntTypeInterpreter(private val methodNode: MethodNode) : In
     // ACONST_NULL, ICONST_M1, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4,
     // ICONST_5, LCONST_0, LCONST_1, FCONST_0, FCONST_1, FCONST_2, DCONST_0,
     // DCONST_1, BIPUSH, SIPUSH, LDC, JSR, GETSTATIC, NEW
-    override fun newOperation(insn: AbstractInsnNode): ReifiedIntTypeValue? = when (insn.opcode) {
-        ACONST_NULL -> ReifiedIntTypeValue(NULL_TYPE, insn)
-        ICONST_M1, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5 -> ReifiedIntTypeValue(Type.INT_TYPE, insn)
-        LCONST_0, LCONST_1 -> ReifiedIntTypeValue(Type.LONG_TYPE, insn)
-        FCONST_0, FCONST_1, FCONST_2 -> ReifiedIntTypeValue(Type.FLOAT_TYPE, insn)
-        DCONST_0, DCONST_1 -> ReifiedIntTypeValue(Type.DOUBLE_TYPE, insn)
-        BIPUSH -> ReifiedIntTypeValue(Type.BYTE_TYPE, insn)
-        SIPUSH -> ReifiedIntTypeValue(Type.SHORT_TYPE, insn)
+    override fun newOperation(insn: AbstractInsnNode): SpilledVariableFieldTypeValue? = when (insn.opcode) {
+        ACONST_NULL -> SpilledVariableFieldTypeValue(NULL_TYPE, insn)
+        ICONST_M1, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5 -> SpilledVariableFieldTypeValue(Type.INT_TYPE, insn)
+        LCONST_0, LCONST_1 -> SpilledVariableFieldTypeValue(Type.LONG_TYPE, insn)
+        FCONST_0, FCONST_1, FCONST_2 -> SpilledVariableFieldTypeValue(Type.FLOAT_TYPE, insn)
+        DCONST_0, DCONST_1 -> SpilledVariableFieldTypeValue(Type.DOUBLE_TYPE, insn)
+        BIPUSH -> SpilledVariableFieldTypeValue(Type.BYTE_TYPE, insn)
+        SIPUSH -> SpilledVariableFieldTypeValue(Type.SHORT_TYPE, insn)
         LDC -> when (val cst = (insn as LdcInsnNode).cst) {
-            is Int -> ReifiedIntTypeValue(Type.INT_TYPE, insn)
-            is Long -> ReifiedIntTypeValue(Type.LONG_TYPE, insn)
-            is Float -> ReifiedIntTypeValue(Type.FLOAT_TYPE, insn)
-            is Double -> ReifiedIntTypeValue(Type.DOUBLE_TYPE, insn)
-            is String -> ReifiedIntTypeValue(AsmTypes.JAVA_STRING_TYPE, insn)
-            is Type -> when (cst.sort) {
-                Type.OBJECT, Type.ARRAY -> ReifiedIntTypeValue(AsmTypes.JAVA_CLASS_TYPE, insn)
-                Type.METHOD -> ReifiedIntTypeValue(Type.getObjectType("java/lang/invoke/MethodType"), insn)
-                else -> unreachable(insn)
-            }
-            is Handle -> ReifiedIntTypeValue(Type.getObjectType("java/lang/invoke/MethodHandle"), insn)
-            else -> ReifiedIntTypeValue(AsmTypes.OBJECT_TYPE, insn)
+            is Int -> SpilledVariableFieldTypeValue(Type.INT_TYPE, insn)
+            is Long -> SpilledVariableFieldTypeValue(Type.LONG_TYPE, insn)
+            is Float -> SpilledVariableFieldTypeValue(Type.FLOAT_TYPE, insn)
+            is Double -> SpilledVariableFieldTypeValue(Type.DOUBLE_TYPE, insn)
+            is String -> SpilledVariableFieldTypeValue(AsmTypes.JAVA_STRING_TYPE, insn)
+            is Type -> SpilledVariableFieldTypeValue(AsmTypes.JAVA_CLASS_TYPE, insn)
+            else -> SpilledVariableFieldTypeValue(AsmTypes.OBJECT_TYPE, insn)
         }
-        JSR -> ReifiedIntTypeValue(Type.VOID_TYPE, insn)
-        GETSTATIC -> ReifiedIntTypeValue(Type.getType((insn as FieldInsnNode).desc), insn)
-        NEW -> ReifiedIntTypeValue(Type.getObjectType((insn as TypeInsnNode).desc), insn)
+        JSR -> SpilledVariableFieldTypeValue(Type.VOID_TYPE, insn)
+        GETSTATIC -> SpilledVariableFieldTypeValue(Type.getType((insn as FieldInsnNode).desc), insn)
+        NEW -> SpilledVariableFieldTypeValue(Type.getObjectType((insn as TypeInsnNode).desc), insn)
         else -> unreachable(insn)
     }
 }
 
-internal fun performRefinedTypeAnalysis(methodNode: MethodNode, thisName: String): Array<out Frame<ReifiedIntTypeValue>?> =
-    MethodAnalyzer(thisName, methodNode, ReifiedIntTypeInterpreter(methodNode)).analyze()
+internal fun performSpilledVariableFieldTypesAnalysis(
+    methodNode: MethodNode,
+    thisName: String
+): Array<out Frame<SpilledVariableFieldTypeValue>?> =
+    MethodAnalyzer(thisName, methodNode, SpilledVariableFieldTypesInterpreter(methodNode)).analyze()
