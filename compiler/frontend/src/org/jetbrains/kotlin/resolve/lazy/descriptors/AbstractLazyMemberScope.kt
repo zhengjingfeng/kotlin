@@ -188,6 +188,12 @@ protected constructor(
 
     protected abstract fun getNonDeclaredProperties(name: Name, result: MutableSet<PropertyDescriptor>)
 
+    override fun definitelyDoesNotContainName(name: Name): Boolean =
+        !getVariableNames().contains(name) &&
+                !getFunctionNames().contains(name) &&
+                getClassifierNames()?.contains(name) != true &&
+                typeAliasDescriptors(name).isEmpty()
+
     protected fun getContributedTypeAliasDescriptors(name: Name, location: LookupLocation): Collection<TypeAliasDescriptor> {
         recordLookup(name, location)
         return typeAliasDescriptors(name)
@@ -266,7 +272,7 @@ protected constructor(
     abstract override fun toString(): String
 
     fun toProviderString() = (declarationProvider as? AbstractPsiBasedDeclarationProvider)?.toInfoString()
-            ?: declarationProvider.toString()
+        ?: declarationProvider.toString()
 
     override fun printScopeStructure(p: Printer) {
         p.println(this::class.java.simpleName, " {")

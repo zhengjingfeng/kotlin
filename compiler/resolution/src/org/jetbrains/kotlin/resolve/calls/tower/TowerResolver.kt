@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.resolve.calls.tower
 
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.progress.ProgressIndicatorAndCompilationCanceledStatus
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind
@@ -23,6 +24,7 @@ import org.jetbrains.kotlin.resolve.descriptorUtil.HIDES_MEMBERS_NAME_LIST
 import org.jetbrains.kotlin.resolve.scopes.ImportingScope
 import org.jetbrains.kotlin.resolve.scopes.LexicalScope
 import org.jetbrains.kotlin.resolve.scopes.ResolutionScope
+import org.jetbrains.kotlin.resolve.scopes.receivers.ImplicitClassReceiver
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValueWithSmartCastInfo
 import org.jetbrains.kotlin.resolve.scopes.utils.parentsWithSelf
 import org.jetbrains.kotlin.types.KotlinType
@@ -227,9 +229,16 @@ class TowerResolver {
             }
 
             // extension for implicit receiver
-            for (nonLocalLevel in nonLocalLevels) {
-                TowerData.BothTowerLevelAndImplicitReceiver(nonLocalLevel, implicitReceiver).process()?.let { return it }
-            }
+            val receiverValue = implicitReceiver.receiverValue
+            val resolveExtensions = receiverValue !is ImplicitClassReceiver ||
+                    !receiverValue.classDescriptor.annotations.hasAnnotation(
+                        FqName(AllowSkipExtensionsResolutionForImplicits::class.qualifiedName!!)
+                    )
+
+            if (resolveExtensions)
+                for (nonLocalLevel in nonLocalLevels) {
+                    TowerData.BothTowerLevelAndImplicitReceiver(nonLocalLevel, implicitReceiver).process()?.let { return it }
+                }
 
             return null
         }

@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.scripting.ide_services.test_util
 
+import org.jetbrains.kotlin.resolve.calls.tower.AllowSkipExtensionsResolutionForImplicits
 import kotlin.script.experimental.annotations.KotlinScript
 import kotlin.script.experimental.api.*
 import kotlin.script.experimental.host.ScriptingHostConfiguration
@@ -14,6 +15,7 @@ import kotlin.script.experimental.jvm.updateClasspath
 import kotlin.script.experimental.jvm.util.classpathFromClass
 
 @KotlinScript(fileExtension = "simplescript.kts")
+@AllowSkipExtensionsResolutionForImplicits
 abstract class SimpleScript
 
 val simpleScriptCompilationConfiguration =

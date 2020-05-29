@@ -17,6 +17,7 @@ dependencies {
     testCompile(project(":kotlin-scripting-ide-services-unshaded"))
     testCompile(project(":kotlin-scripting-compiler"))
     testCompile(project(":compiler:cli-common"))
+    testCompile(project(":compiler:resolution"))
 
     testRuntimeOnly(project(":kotlin-compiler"))
     testRuntimeOnly(commonDep("org.jetbrains.intellij.deps", "trove4j"))
